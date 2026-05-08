@@ -191,25 +191,40 @@ function CalendarContent() {
   return (
     <main className="flex h-screen w-full bg-white overflow-hidden text-black font-sans isolate">
       <section className="w-full md:w-[72%] h-full flex flex-col border-r border-gray-100">
-        <header className="h-16 landscape:h-10 md:h-20 flex-none border-b flex justify-between items-center px-4 md:px-10 bg-white">
-          <div className="flex items-center gap-3 md:gap-10">
-            <h1 className="text-sm landscape:text-xs md:text-2xl font-black italic tracking-tighter border-l-4 md:border-l-8 border-blue-600 pl-3 md:pl-4 uppercase">Elysian</h1>
+        {/* Mobile header — month nav only */}
+        <header className="md:hidden landscape:h-9 h-12 flex-none border-b flex items-center justify-between px-3 bg-white">
+          <button onClick={signOut} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><LogOut size={15} /></button>
+          <div className="flex items-center bg-gray-50 rounded-xl p-0.5 border gap-0.5">
+            <button onClick={() => navigateMonth('prev')} className="p-1.5 hover:bg-white rounded-lg transition-all"><ChevronLeft size={15} /></button>
+            <span className="text-[10px] landscape:text-[9px] font-black uppercase tracking-wide px-2 min-w-[80px] text-center">{format(referenceDate, 'MMMM yyyy')}</span>
+            <button onClick={() => navigateMonth('next')} className="p-1.5 hover:bg-white rounded-lg transition-all"><ChevronRight size={15} /></button>
+          </div>
+          <button onClick={() => navigateMonth('today')} className="p-1.5 text-blue-500"><Target size={15} /></button>
+        </header>
+
+        {/* Desktop header */}
+        <header className="hidden md:flex h-20 flex-none border-b justify-between items-center px-10 bg-white">
+          <div className="flex items-center gap-10">
+            <h1 className="text-2xl font-black italic tracking-tighter border-l-8 border-blue-600 pl-4 uppercase">Elysian Scheduler</h1>
             {isScheduler && (
-              <nav className="hidden md:flex gap-6 ml-6 border-l-2 pl-8">
+              <nav className="flex gap-6 ml-6 border-l-2 pl-8">
                 <Link href={`/roster?m=${format(referenceDate, 'yyyy-MM-dd')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Manage Roster</Link>
                 <Link href={`/insights?m=${format(referenceDate, 'yyyy-MM')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Insights</Link>
               </nav>
             )}
           </div>
-          <div className="flex items-center gap-2 md:gap-4">
-            <button onClick={() => navigateMonth('today')} className="hidden md:flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95"><Target size={14} /> Today</button>
-            <div className="flex items-center bg-gray-50 rounded-xl md:rounded-2xl p-1 border">
-              <button onClick={() => navigateMonth('prev')} className="p-1.5 md:p-2 hover:bg-white hover:shadow-sm rounded-lg md:rounded-xl transition-all"><ChevronLeft size={16} /></button>
-              <span className="text-[9px] landscape:text-[8px] md:text-[11px] font-black uppercase tracking-tight md:tracking-[0.2em] px-2 md:px-6 min-w-[70px] landscape:min-w-[60px] md:min-w-[160px] text-center">{format(referenceDate, 'MMM yyyy')}</span>
-              <button onClick={() => navigateMonth('next')} className="p-1.5 md:p-2 hover:bg-white hover:shadow-sm rounded-lg md:rounded-xl transition-all"><ChevronRight size={16} /></button>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigateMonth('today')} className="flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95"><Target size={14} /> Today</button>
+            <div className="flex items-center bg-gray-50 rounded-2xl p-1 border">
+              <button onClick={() => navigateMonth('prev')} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronLeft size={18} /></button>
+              <span className="text-[11px] font-black uppercase tracking-[0.2em] px-6 min-w-[160px] text-center">{format(referenceDate, 'MMMM yyyy')}</span>
+              <button onClick={() => navigateMonth('next')} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronRight size={18} /></button>
             </div>
-            <div className="flex items-center gap-2 md:gap-3 pl-2 border-l">
-              <p className="hidden md:block text-[10px] font-black uppercase tracking-widest text-gray-900 leading-none">{profile?.full_name || user?.email}</p>
+            <div className="flex items-center gap-3 pl-2 border-l">
+              <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-900 leading-none">{profile?.full_name || user?.email}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">{profile?.role || 'worker'}</p>
+              </div>
               <button onClick={signOut} className="p-2 text-gray-300 hover:text-red-500 transition-colors" title="Sign out"><LogOut size={16} /></button>
             </div>
           </div>
@@ -314,16 +329,18 @@ function CalendarContent() {
         )}
       </section>
 
-      {/* Mobile FAB */}
-      <button
-        onClick={() => setShowMobilePanel(p => !p)}
-        className="md:hidden fixed bottom-4 landscape:bottom-2 right-4 landscape:right-3 z-[150] w-12 h-12 landscape:w-10 landscape:h-10 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
-      >
-        {showMobilePanel ? <X size={22} /> : <Activity size={22} className="text-blue-400" />}
-        {triageCount > 0 && !showMobilePanel && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[9px] font-black flex items-center justify-center">{triageCount}</span>
-        )}
-      </button>
+      {/* Mobile FAB — only shows when there's something to act on */}
+      {(triageCount > 0 || pendingSwaps.length > 0 || myOutgoingRequests.length > 0 || showMobilePanel) && (
+        <button
+          onClick={() => setShowMobilePanel(p => !p)}
+          className="md:hidden fixed bottom-4 landscape:bottom-2 right-4 landscape:right-3 z-[150] w-12 h-12 landscape:w-10 landscape:h-10 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
+        >
+          {showMobilePanel ? <X size={20} /> : <Activity size={20} className="text-blue-400" />}
+          {(triageCount + pendingSwaps.length) > 0 && !showMobilePanel && (
+            <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[9px] font-black flex items-center justify-center">{triageCount + pendingSwaps.length}</span>
+          )}
+        </button>
+      )}
 
       {/* Mobile backdrop */}
       {showMobilePanel && (

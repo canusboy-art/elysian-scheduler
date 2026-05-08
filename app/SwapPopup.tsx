@@ -17,7 +17,7 @@ export default function SwapPopup({ pendingSwaps, roster, myProfile, onDismiss, 
   const [groupIndex, setGroupIndex] = useState(0);
   const [loadingDay, setLoadingDay] = useState<string | null>(null);
   const [confirmDay, setConfirmDay] = useState<{ id: string; action: 'accept' | 'decline' } | null>(null);
-  const [dayStatuses, setDayStatuses] = useState<Record<string, 'approved' | 'denied'>>({});
+  const [dayStatuses, setDayStatuses] = useState<Record<string, string>>({});
 
   const grouped = Object.values(
     pendingSwaps.reduce((acc: any, swap: any) => {

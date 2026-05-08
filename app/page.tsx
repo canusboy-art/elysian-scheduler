@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Activity, CheckCircle2, Target, AlertTriangl
 import DayDetailPanel from './DayDetailPanel';
 import WorkerDayPanel from './WorkerDayPanel';
 import SwapPopup from './SwapPopup';
+import MultiDaySwapModal from './MultiDaySwapModal';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
@@ -32,6 +33,8 @@ function CalendarContent() {
   const [acceptedSwaps, setAcceptedSwaps] = useState<any[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<any[]>([]);
   const [showSwapPopup, setShowSwapPopup] = useState(false);
+  const [multiSelectedDates, setMultiSelectedDates] = useState<string[]>([]);
+  const [showMultiSwapModal, setShowMultiSwapModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -83,6 +86,22 @@ function CalendarContent() {
       });
     }
     return baseStaff;
+  };
+
+  const toggleDaySelection = (dateStr: string) => {
+    setMultiSelectedDates(prev =>
+      prev.includes(dateStr) ? prev.filter(d => d !== dateStr) : [...prev, dateStr]
+    );
+  };
+
+  const getMultiDayEligible = () => {
+    if (!profile || multiSelectedDates.length === 0) return [];
+    return roster.filter(s => {
+      if (s.id === profile.id) return false;
+      const matchesDiscipline = (profile.is_pt && s.is_pt) || (profile.is_ot && s.is_ot) || (profile.is_st && s.is_st);
+      if (!matchesDiscipline) return false;
+      return multiSelectedDates.every(date => !getStaffForDate(date).some(ws => ws.id === s.id));
+    });
   };
 
   const navigateMonth = (direction: 'next' | 'prev' | 'today') => {
@@ -189,18 +208,27 @@ function CalendarContent() {
               const stCount = scheduledStaff.filter(s => s.is_st).length;
               const isMeWorking = profile && scheduledStaff.some(s => s.id === profile.id);
               const isCoveringSwap = isMeWorking && acceptedSwaps.some(s => s.date === dateStr);
+              const isSelected = multiSelectedDates.includes(dateStr);
+              const today = format(new Date(), 'yyyy-MM-dd');
+              const isPast = dateStr < today;
 
               return (
                 <div key={dateStr} onClick={() => setSelectedDate(dateStr)}
                   className={`border-2 transition-all cursor-pointer relative rounded-[1.2rem] p-3 flex flex-col items-center justify-center gap-1
-                    ${dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' : isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}
+                    ${isSelected ? 'ring-4 ring-emerald-400 border-emerald-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' : isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}
                     ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}
                     ${!isCurrentMonth ? 'opacity-20 grayscale' : 'opacity-100'}`}
                 >
                   <span className={`text-[11px] font-black uppercase absolute top-3 left-3 leading-none ${isToday ? 'text-white' : isMeWorking ? 'text-emerald-600' : 'text-gray-300'}`}>
                     {format(new Date(dateStr + 'T12:00:00'), 'd')}
                   </span>
-                  {hasOverride && <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
+                  {!isScheduler && isMeWorking && !isToday && !isPast && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleDaySelection(dateStr); }}
+                      className={`absolute top-2.5 right-2.5 w-4 h-4 rounded-full border-2 transition-all z-10 ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-emerald-300 bg-white hover:bg-emerald-100'}`}
+                    />
+                  )}
+                  {hasOverride && !multiSelectedDates.length && <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
                   {isCoveringSwap && !isToday && <div className="absolute bottom-2 left-2 text-[8px]">🔄</div>}
                   {hasOpenSlot && !isToday && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                   <div className="flex flex-col gap-1 w-full max-w-[75px]">
@@ -213,6 +241,22 @@ function CalendarContent() {
             })}
           </div>
         </div>
+
+        {!isScheduler && multiSelectedDates.length > 0 && (
+          <div className="flex-none px-4 py-3 bg-white border-t flex items-center justify-between gap-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
+              {multiSelectedDates.length} {multiSelectedDates.length === 1 ? 'day' : 'days'} selected
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setMultiSelectedDates([])} className="px-4 py-2 bg-gray-100 rounded-xl font-black text-[10px] uppercase text-gray-400 hover:bg-gray-200 transition-all">
+                Clear
+              </button>
+              <button onClick={() => setShowMultiSwapModal(true)} className="px-5 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all">
+                Request Swap
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       <aside className="w-[28%] h-full flex flex-col bg-white border-l shadow-2xl relative z-20">
@@ -331,6 +375,16 @@ function CalendarContent() {
           myProfile={profile}
           onDismiss={() => setShowSwapPopup(false)}
           onUpdate={handleUpdate}
+        />
+      )}
+
+      {showMultiSwapModal && profile && (
+        <MultiDaySwapModal
+          selectedDates={multiSelectedDates}
+          myProfile={profile}
+          eligibleStaff={getMultiDayEligible()}
+          onClose={() => setShowMultiSwapModal(false)}
+          onUpdate={async () => { setMultiSelectedDates([]); await handleUpdate(); }}
         />
       )}
     </main>

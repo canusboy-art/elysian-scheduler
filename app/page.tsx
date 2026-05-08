@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
   format, subMonths, addMonths,
-  isSameDay, isSameMonth, startOfWeek, parseISO, getDay, addDays, eachDayOfInterval, startOfMonth, endOfMonth
+  isSameDay, isSameMonth, startOfWeek, parseISO, getDay, addDays, eachDayOfInterval, startOfMonth
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Activity, CheckCircle2, Target, AlertTriangle, LogOut, Check, X } from 'lucide-react';
 import DayDetailPanel from './DayDetailPanel';
@@ -406,14 +406,16 @@ function CalendarContent() {
             await handleUpdate();
           };
 
-          const monthShifts = eachDayOfInterval({ start: startOfMonth(referenceDate), end: endOfMonth(referenceDate) })
+          const today = format(new Date(), 'yyyy-MM-dd');
+          const yearEnd = new Date(new Date().getFullYear(), 11, 31);
+          const monthShifts = eachDayOfInterval({ start: new Date(), end: yearEnd })
             .map(d => format(d, 'yyyy-MM-dd'))
-            .filter(d => d >= format(new Date(), 'yyyy-MM-dd'))
-            .filter(d => profile && getStaffForDate(d).some(s => s.id === profile.id))
+            .filter(d => d >= today)
             .filter(d => {
               const dow = getDay(new Date(d + 'T12:00:00'));
               return dow === 0 || dow === 6 || getHolidayName(d) !== null;
-            });
+            })
+            .filter(d => profile && getStaffForDate(d).some(s => s.id === profile.id));
 
           const statusStyles: Record<string, { bg: string; border: string; text: string; badge: string }> = {
             pending:  { bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-600' },

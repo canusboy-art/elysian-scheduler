@@ -22,7 +22,7 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
   const [selectedPerson, setSelectedPerson] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [openShifts, setOpenShifts] = useState<any[]>([]);
-  const [existingRequest, setExistingRequest] = useState<any | null>(null);
+  const [dayRequests, setDayRequests] = useState<any[]>([]);
   const [mySlotNote, setMySlotNote] = useState<string | null>(null);
 
   useEffect(() => {
@@ -30,8 +30,8 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
     supabase.from('shifts').select('*').eq('date', dateStr).eq('status', 'vacant').eq('discipline', myDiscipline)
       .then(({ data }) => setOpenShifts(data || []));
     supabase.from('shift_requests').select('*')
-      .eq('user_id', myProfile.id).eq('date', dateStr).in('status', ['pending', 'approved', 'denied'])
-      .then(({ data }) => setExistingRequest(data?.[0] || null));
+      .eq('user_id', myProfile.id).eq('date', dateStr)
+      .then(({ data }) => setDayRequests(data || []));
     // Check if worker signed up for an open slot on this day
     supabase.from('shift_assignments').select('*').eq('user_id', myProfile.id)
       .then(async ({ data: assignments }) => {
@@ -102,21 +102,26 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
 
         {view === 'main' && (
           <div className="flex-1 p-10 space-y-4">
-            {existingRequest && (() => {
-              const statusStyles: Record<string, { bg: string; border: string; text: string }> = {
-                pending:  { bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-600' },
-                approved: { bg: 'bg-green-50',  border: 'border-green-100',  text: 'text-green-700' },
-                denied:   { bg: 'bg-red-50',    border: 'border-red-100',    text: 'text-red-600'   },
+            {dayRequests.map(req => {
+              const statusMap: Record<string, { bg: string; border: string; label: string; icon: string }> = {
+                pending:  { bg: 'bg-orange-50', border: 'border-orange-200', label: 'Pending',  icon: '⏳' },
+                approved: { bg: 'bg-green-50',  border: 'border-green-200',  label: 'Approved', icon: '✓'  },
+                denied:   { bg: 'bg-red-50',    border: 'border-red-200',    label: 'Denied',   icon: '✕'  },
               };
-              const s = statusStyles[existingRequest.status] || statusStyles.pending;
-              const label = existingRequest.type === 'petition_off' ? 'Time Off Request' : 'Swap Request';
-              const statusLabel = existingRequest.status === 'approved' ? '✓ Approved' : existingRequest.status === 'denied' ? '✕ Denied' : '⏳ Pending';
+              const s = statusMap[req.status] || statusMap.pending;
+              const typeLabel = req.type === 'petition_off' ? 'Time Off Request' : 'Swap Request';
               return (
-                <div className={`p-5 ${s.bg} border ${s.border} rounded-[1.5rem]`}>
-                  <p className={`text-xs font-black uppercase tracking-widest ${s.text}`}>{label} — {statusLabel}</p>
+                <div key={req.id} className={`p-5 ${s.bg} border ${s.border} rounded-[1.5rem] space-y-1`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-black uppercase tracking-widest text-gray-700">{typeLabel}</p>
+                    <span className={`text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg ${s.bg} ${s.border} border`}>
+                      {s.icon} {s.label}
+                    </span>
+                  </div>
+                  {req.reason && <p className="text-[11px] text-gray-500 italic">"{req.reason}"</p>}
                 </div>
               );
-            })()}
+            })}
 
             {isWorkingThisDay ? (
               <>
@@ -131,7 +136,7 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
                     <p className="text-xs text-emerald-600 italic border-t border-emerald-200 pt-2 mt-2">📋 {mySlotNote}</p>
                   )}
                 </div>
-                {!existingRequest && (
+                {!dayRequests.some(r => r.status === 'pending') && (
                   isPast ? (
                     <div className="p-5 bg-gray-50 border border-gray-100 rounded-[1.5rem]">
                       <p className="text-xs font-black uppercase tracking-widest text-gray-400">Requests cannot be made for past days</p>

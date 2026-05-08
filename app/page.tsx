@@ -39,6 +39,7 @@ function CalendarContent() {
   const [multiSelectedDates, setMultiSelectedDates] = useState<string[]>([]);
   const [showMultiSwapModal, setShowMultiSwapModal] = useState(false);
   const [showMultiTimeOffModal, setShowMultiTimeOffModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ id: string; action: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -307,14 +308,33 @@ function CalendarContent() {
                           <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest">{format(new Date(req.date + 'T12:00:00'), 'EEE, MMM d')}</p>
                           {req.reason && <p className="text-xs text-orange-600 italic mt-1">"{req.reason}"</p>}
                         </div>
-                        <div className="flex gap-2">
-                          <button onClick={() => denyPetitionOff(req)} className="flex-1 py-2 bg-white border border-orange-200 rounded-xl font-black text-[9px] uppercase text-orange-400 flex items-center justify-center gap-1 hover:bg-red-50 transition-all">
-                            <X size={11} /> Deny
-                          </button>
-                          <button onClick={() => approvePetitionOff(req)} className="flex-1 py-2 bg-orange-500 rounded-xl font-black text-[9px] uppercase text-white flex items-center justify-center gap-1 hover:bg-orange-600 transition-all">
-                            <Check size={11} /> Approve
-                          </button>
-                        </div>
+                        {confirmAction?.id === req.id ? (
+                          <div className="space-y-2">
+                            {(() => { const ca = confirmAction!; return (
+                            <>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-center text-orange-600">
+                              {ca.action === 'approve' ? 'Approve this request?' : 'Deny this request?'}
+                            </p>
+                            <div className="flex gap-2">
+                              <button onClick={() => setConfirmAction(null)} className="flex-1 py-2 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400">No</button>
+                              <button
+                                onClick={() => { setConfirmAction(null); ca.action === 'approve' ? approvePetitionOff(req) : denyPetitionOff(req); }}
+                                className={`flex-1 py-2 rounded-xl font-black text-[9px] uppercase text-white ${ca.action === 'approve' ? 'bg-orange-500' : 'bg-red-500'}`}
+                              >Yes</button>
+                            </div>
+                            </>
+                            ); })()}
+                          </div>
+                        ) : (
+                          <div className="flex gap-2">
+                            <button onClick={() => setConfirmAction({ id: req.id, action: 'deny' })} className="flex-1 py-2 bg-white border border-orange-200 rounded-xl font-black text-[9px] uppercase text-orange-400 flex items-center justify-center gap-1 hover:bg-red-50 transition-all">
+                              <X size={11} /> Deny
+                            </button>
+                            <button onClick={() => setConfirmAction({ id: req.id, action: 'approve' })} className="flex-1 py-2 bg-orange-500 rounded-xl font-black text-[9px] uppercase text-white flex items-center justify-center gap-1 hover:bg-orange-600 transition-all">
+                              <Check size={11} /> Approve
+                            </button>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -385,11 +405,21 @@ function CalendarContent() {
                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-700">{requester?.full_name}</p>
                             {isDenied && <p className="text-[9px] font-black uppercase text-gray-400">Declined — change mind?</p>}
                           </div>
-                          {isDenied
-                            ? <button onClick={() => acceptGroup(group)} className="px-3 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">Accept</button>
+                          {confirmAction?.id === group[0].user_id ? (
+                            (() => { const ca = confirmAction!; return (
+                              <div className="flex gap-1">
+                                <button onClick={() => setConfirmAction(null)} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400">No</button>
+                                <button
+                                  onClick={() => { setConfirmAction(null); ca.action === 'accept' ? acceptGroup(group) : declineGroup(group); }}
+                                  className={`px-2.5 py-1.5 rounded-xl font-black text-[9px] uppercase text-white ${ca.action === 'accept' ? 'bg-blue-600' : 'bg-red-500'}`}
+                                >Yes</button>
+                              </div>
+                            ); })()
+                          ) : isDenied
+                            ? <button onClick={() => setConfirmAction({ id: group[0].user_id, action: 'accept' })} className="px-3 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">Accept</button>
                             : <div className="flex gap-1">
-                                <button onClick={() => declineGroup(group)} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400 hover:text-red-500 transition-all">✕</button>
-                                <button onClick={() => acceptGroup(group)} className="px-2.5 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">✓</button>
+                                <button onClick={() => setConfirmAction({ id: group[0].user_id, action: 'decline' })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400 hover:text-red-500 transition-all">✕</button>
+                                <button onClick={() => setConfirmAction({ id: group[0].user_id, action: 'accept' })} className="px-2.5 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">✓</button>
                               </div>
                           }
                         </div>

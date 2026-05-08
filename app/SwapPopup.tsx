@@ -16,6 +16,7 @@ interface Props {
 export default function SwapPopup({ pendingSwaps, roster, myProfile, onDismiss, onUpdate }: Props) {
   const [loading, setLoading] = useState<string | null>(null);
   const [groupIndex, setGroupIndex] = useState(0);
+  const [confirm, setConfirm] = useState<'accept' | 'decline' | null>(null);
 
   // Group swaps by requester
   const grouped = Object.values(
@@ -104,21 +105,39 @@ export default function SwapPopup({ pendingSwaps, roster, myProfile, onDismiss, 
         </p>
 
         <div className="flex flex-col gap-2">
-          <div className="flex gap-2">
-            <button onClick={handleDecline} disabled={!!loading}
-              className="flex-1 py-4 bg-gray-100 hover:bg-red-50 hover:text-red-600 rounded-xl font-black text-[10px] uppercase text-gray-500 flex items-center justify-center gap-2 transition-all"
-            >
-              <X size={13} /> Decline
+          {confirm ? (
+            <div className="space-y-2">
+              <p className="text-center text-[10px] font-black uppercase tracking-widest text-gray-500">
+                {confirm === 'accept' ? 'Accept this swap?' : 'Decline this swap?'}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirm(null)} className="flex-1 py-4 bg-gray-100 rounded-xl font-black text-[10px] uppercase text-gray-400">
+                  No, go back
+                </button>
+                <button
+                  onClick={() => { setConfirm(null); confirm === 'accept' ? handleAccept() : handleDecline(); }}
+                  disabled={!!loading}
+                  className={`flex-1 py-4 rounded-xl font-black text-[10px] uppercase text-white disabled:bg-gray-300 ${confirm === 'accept' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-red-500 hover:bg-red-600'}`}
+                >
+                  {loading ? 'Saving...' : 'Yes, confirm'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button onClick={() => setConfirm('decline')} className="flex-1 py-4 bg-gray-100 hover:bg-red-50 hover:text-red-600 rounded-xl font-black text-[10px] uppercase text-gray-500 flex items-center justify-center gap-2 transition-all">
+                <X size={13} /> Decline
+              </button>
+              <button onClick={() => setConfirm('accept')} className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-black text-[10px] uppercase text-white flex items-center justify-center gap-2 transition-all">
+                <Check size={13} /> Accept
+              </button>
+            </div>
+          )}
+          {!confirm && (
+            <button onClick={nextGroup} className="w-full py-3 text-[9px] font-black uppercase tracking-widest text-gray-300 hover:text-gray-500 flex items-center justify-center gap-2 transition-colors">
+              <Clock size={11} /> Decide Later
             </button>
-            <button onClick={handleAccept} disabled={!!loading}
-              className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 rounded-xl font-black text-[10px] uppercase text-white flex items-center justify-center gap-2 transition-all disabled:bg-gray-300"
-            >
-              <Check size={13} /> {loading === 'accept' ? 'Saving...' : 'Accept'}
-            </button>
-          </div>
-          <button onClick={nextGroup} className="w-full py-3 text-[9px] font-black uppercase tracking-widest text-gray-300 hover:text-gray-500 flex items-center justify-center gap-2 transition-colors">
-            <Clock size={11} /> Decide Later
-          </button>
+          )}
         </div>
       </div>
     </div>

@@ -23,6 +23,7 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
   const [loading, setLoading] = useState(false);
   const [openShifts, setOpenShifts] = useState<any[]>([]);
   const [existingRequest, setExistingRequest] = useState<any | null>(null);
+  const [mySlotNote, setMySlotNote] = useState<string | null>(null);
 
   useEffect(() => {
     const myDiscipline = myProfile.is_pt ? 'PT' : myProfile.is_ot ? 'OT' : 'ST';
@@ -31,6 +32,14 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
     supabase.from('shift_requests').select('*')
       .eq('user_id', myProfile.id).eq('date', dateStr).in('status', ['pending', 'approved'])
       .then(({ data }) => setExistingRequest(data?.[0] || null));
+    // Check if worker signed up for an open slot on this day
+    supabase.from('shift_assignments').select('*').eq('user_id', myProfile.id)
+      .then(async ({ data: assignments }) => {
+        if (!assignments?.length) return;
+        const { data: slots } = await supabase.from('shifts').select('*')
+          .in('id', assignments.map(a => a.shift_id)).eq('date', dateStr);
+        if (slots?.length) setMySlotNote(slots[0].admin_note || null);
+      });
   }, [dateStr, myProfile.id]);
 
   const isPast = isBefore(parseISO(dateStr), startOfDay(new Date()));
@@ -103,12 +112,15 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
 
             {isWorkingThisDay ? (
               <>
-                <div className="p-5 bg-emerald-50 border border-emerald-100 rounded-[1.5rem]">
+                <div className="p-5 bg-emerald-50 border border-emerald-100 rounded-[1.5rem] space-y-1">
                   <p className="text-xs font-black uppercase tracking-widest text-emerald-700">You are scheduled this day</p>
                   {coveringPerson && (
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mt-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">
                       Covering for {coveringPerson.full_name}
                     </p>
+                  )}
+                  {mySlotNote && (
+                    <p className="text-xs text-emerald-600 italic border-t border-emerald-200 pt-2 mt-2">📋 {mySlotNote}</p>
                   )}
                 </div>
                 {!existingRequest && (

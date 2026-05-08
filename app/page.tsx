@@ -191,9 +191,9 @@ function CalendarContent() {
   return (
     <main className="flex h-screen w-full bg-white overflow-hidden text-black font-sans isolate">
       <section className="w-full md:w-[72%] h-full flex flex-col border-r border-gray-100">
-        <header className="h-16 md:h-20 flex-none border-b flex justify-between items-center px-4 md:px-10 bg-white">
+        <header className="h-16 landscape:h-10 md:h-20 flex-none border-b flex justify-between items-center px-4 md:px-10 bg-white">
           <div className="flex items-center gap-3 md:gap-10">
-            <h1 className="text-lg md:text-2xl font-black italic tracking-tighter border-l-4 md:border-l-8 border-blue-600 pl-3 md:pl-4 uppercase">Elysian</h1>
+            <h1 className="text-sm landscape:text-xs md:text-2xl font-black italic tracking-tighter border-l-4 md:border-l-8 border-blue-600 pl-3 md:pl-4 uppercase">Elysian</h1>
             {isScheduler && (
               <nav className="hidden md:flex gap-6 ml-6 border-l-2 pl-8">
                 <Link href={`/roster?m=${format(referenceDate, 'yyyy-MM-dd')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Manage Roster</Link>
@@ -205,7 +205,7 @@ function CalendarContent() {
             <button onClick={() => navigateMonth('today')} className="hidden md:flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95"><Target size={14} /> Today</button>
             <div className="flex items-center bg-gray-50 rounded-xl md:rounded-2xl p-1 border">
               <button onClick={() => navigateMonth('prev')} className="p-1.5 md:p-2 hover:bg-white hover:shadow-sm rounded-lg md:rounded-xl transition-all"><ChevronLeft size={16} /></button>
-              <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] px-2 md:px-6 min-w-[90px] md:min-w-[160px] text-center">{format(referenceDate, 'MMM yyyy')}</span>
+              <span className="text-[9px] landscape:text-[8px] md:text-[11px] font-black uppercase tracking-tight md:tracking-[0.2em] px-2 md:px-6 min-w-[70px] landscape:min-w-[60px] md:min-w-[160px] text-center">{format(referenceDate, 'MMM yyyy')}</span>
               <button onClick={() => navigateMonth('next')} className="p-1.5 md:p-2 hover:bg-white hover:shadow-sm rounded-lg md:rounded-xl transition-all"><ChevronRight size={16} /></button>
             </div>
             <div className="flex items-center gap-2 md:gap-3 pl-2 border-l">
@@ -215,13 +215,13 @@ function CalendarContent() {
           </div>
         </header>
 
-        <div className="flex-1 p-4 bg-gray-50/20 overflow-hidden flex flex-col">
-          <div className="grid grid-cols-7 h-8 mb-2 flex-none">
+        <div className="flex-1 p-2 landscape:p-1 md:p-4 bg-gray-50/20 overflow-hidden flex flex-col">
+          <div className="grid grid-cols-7 h-6 landscape:h-5 md:h-8 mb-1 landscape:mb-0.5 md:mb-2 flex-none">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">{day}</div>
+              <div key={day} className="text-center text-[8px] landscape:text-[7px] md:text-[10px] font-black text-gray-400 uppercase tracking-tight md:tracking-[0.3em]">{day[0]}<span className="hidden md:inline">{day.slice(1)}</span></div>
             ))}
           </div>
-          <div className="flex-1 grid grid-cols-7 grid-rows-6 gap-2 h-full">
+          <div className="flex-1 grid grid-cols-7 grid-rows-6 gap-0.5 landscape:gap-0.5 md:gap-2 h-full">
             {getDisplayDays().map((dateStr) => {
               const scheduledStaff = getStaffForDate(dateStr);
               const isToday = isSameDay(new Date(dateStr + 'T12:00:00'), new Date());
@@ -256,16 +256,16 @@ function CalendarContent() {
 
               return (
                 <div key={dateStr} onClick={() => setSelectedDate(dateStr)}
-                  className={`border-2 transition-all cursor-pointer relative flex flex-col items-center justify-center
-                    rounded-[1rem] md:rounded-[1.2rem]
-                    p-1 md:p-3
-                    gap-0.5 md:gap-1
+                  className={`border transition-all cursor-pointer relative flex flex-col items-center justify-center
+                    rounded-lg landscape:rounded-md md:rounded-[1.2rem]
+                    p-0.5 landscape:p-0 md:p-3
+                    gap-0 md:gap-1
                     ${isSelected ? 'ring-4 ring-violet-400 border-violet-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' :
                       `${mobileBorder} md:${isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}`}
                     ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : `${mobileBg} md:${isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}`}
                     ${!isCurrentMonth ? 'opacity-20 grayscale' : 'opacity-100'}`}
                 >
-                  <span className={`text-[10px] md:text-[11px] font-black uppercase absolute top-1.5 md:top-3 left-1.5 md:left-3 leading-none ${isToday ? 'text-white' : `${mobileDateColor} md:${isMeWorking ? 'text-emerald-600' : 'text-gray-300'}`}`}>
+                  <span className={`text-[9px] landscape:text-[8px] md:text-[11px] font-black uppercase absolute top-1 landscape:top-0.5 md:top-3 left-1 landscape:left-0.5 md:left-3 leading-none ${isToday ? 'text-white' : `${mobileDateColor} md:${isMeWorking ? 'text-emerald-600' : 'text-gray-300'}`}`}>
                     {format(new Date(dateStr + 'T12:00:00'), 'd')}
                   </span>
                   {/* Multi-select button — desktop only */}
@@ -317,7 +317,7 @@ function CalendarContent() {
       {/* Mobile FAB */}
       <button
         onClick={() => setShowMobilePanel(p => !p)}
-        className="md:hidden fixed bottom-6 right-6 z-[150] w-14 h-14 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
+        className="md:hidden fixed bottom-4 landscape:bottom-2 right-4 landscape:right-3 z-[150] w-12 h-12 landscape:w-10 landscape:h-10 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
       >
         {showMobilePanel ? <X size={22} /> : <Activity size={22} className="text-blue-400" />}
         {triageCount > 0 && !showMobilePanel && (
@@ -337,7 +337,7 @@ function CalendarContent() {
         transform transition-transform duration-300 ease-in-out
         ${showMobilePanel ? 'translate-y-0' : 'translate-y-full md:translate-y-0'}
       `}>
-        <header className="h-16 md:h-20 flex-none p-4 md:p-6 border-b flex justify-between items-center bg-gray-900 text-white md:rounded-none rounded-t-[2rem]">
+        <header className="h-14 landscape:h-10 md:h-20 flex-none px-4 md:p-6 border-b flex justify-between items-center bg-gray-900 text-white md:rounded-none rounded-t-[2rem]">
           <h2 className="text-md font-black uppercase tracking-widest flex items-center gap-3">
             <Activity size={22} className="text-blue-400" /> {isScheduler ? 'Triage' : 'My Schedule'}
           </h2>

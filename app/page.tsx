@@ -409,7 +409,11 @@ function CalendarContent() {
           const monthShifts = eachDayOfInterval({ start: startOfMonth(referenceDate), end: endOfMonth(referenceDate) })
             .map(d => format(d, 'yyyy-MM-dd'))
             .filter(d => d >= format(new Date(), 'yyyy-MM-dd'))
-            .filter(d => profile && getStaffForDate(d).some(s => s.id === profile.id));
+            .filter(d => profile && getStaffForDate(d).some(s => s.id === profile.id))
+            .filter(d => {
+              const dow = getDay(new Date(d + 'T12:00:00'));
+              return dow === 0 || dow === 6 || getHolidayName(d) !== null;
+            });
 
           const statusStyles: Record<string, { bg: string; border: string; text: string; badge: string }> = {
             pending:  { bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-600' },
@@ -491,9 +495,9 @@ function CalendarContent() {
 
               {/* Upcoming shifts */}
               <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Upcoming Shifts</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Weekends & Holidays</p>
                 {monthShifts.length === 0 ? (
-                  <p className="text-[9px] font-black uppercase text-gray-300 tracking-widest">No upcoming shifts this month</p>
+                  <p className="text-[9px] font-black uppercase text-gray-300 tracking-widest">No weekend or holiday shifts this month</p>
                 ) : monthShifts.map(d => {
                   const holiday = getHolidayName(d);
                   const dow = getDay(new Date(d + 'T12:00:00'));

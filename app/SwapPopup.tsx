@@ -52,11 +52,11 @@ export default function SwapPopup({ pendingSwaps, roster, myProfile, onDismiss, 
     await supabase.from('shift_requests').update({
       status: action === 'accept' ? 'approved' : 'denied',
     }).eq('id', swap.id);
-    const newStatuses = { ...dayStatuses, [swap.id]: action === 'accept' ? 'approved' : 'denied' };
+    const newStatuses: Record<string, string> = { ...dayStatuses, [String(swap.id)]: action === 'accept' ? 'approved' : 'denied' };
     setDayStatuses(newStatuses);
     setLoadingDay(null);
     // Move on if all days decided
-    const allDecided = group.every(s => newStatuses[s.id]);
+    const allDecided = group.every((s: any) => newStatuses[String(s.id)]);
     if (allDecided) await nextGroup();
   };
 

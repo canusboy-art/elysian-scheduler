@@ -31,6 +31,7 @@ function CalendarContent() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [pendingSwaps, setPendingSwaps] = useState<any[]>([]);
+  const [deniedSwaps, setDeniedSwaps] = useState<any[]>([]);
   const [acceptedSwaps, setAcceptedSwaps] = useState<any[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<any[]>([]);
   const [showSwapPopup, setShowSwapPopup] = useState(false);
@@ -58,12 +59,14 @@ function CalendarContent() {
 
   const fetchUserData = useCallback(async () => {
     if (!profile) return;
-    const [{ data: swapData }, { data: acceptedData }, { data: timeOffData }] = await Promise.all([
+    const [{ data: swapData }, { data: deniedData }, { data: acceptedData }, { data: timeOffData }] = await Promise.all([
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'pending'),
+      supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'denied'),
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'approved'),
       isScheduler ? supabase.from('shift_requests').select('*').eq('type', 'petition_off').eq('status', 'pending') : Promise.resolve({ data: [] }),
     ]);
     setPendingSwaps(swapData || []);
+    setDeniedSwaps(deniedData || []);
     setAcceptedSwaps(acceptedData || []);
     if (swapData && swapData.length > 0) setShowSwapPopup(true);
     setTimeOffRequests(timeOffData || []);
@@ -333,7 +336,69 @@ function CalendarContent() {
           )
         ) : (
           <div className="flex-1 overflow-y-auto p-5 space-y-2">
-            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-4">Upcoming shifts this month</p>
+            {(() => {
+              const allIncoming = [...pendingSwaps, ...deniedSwaps];
+              const grouped = Object.values(
+                allIncoming.reduce((acc: any, s: any) => {
+                  if (!acc[s.user_id]) acc[s.user_id] = [];
+                  acc[s.user_id].push(s);
+                  return acc;
+                }, {})
+              ) as any[][];
+
+              if (grouped.length === 0) return null;
+
+              const acceptGroup = async (group: any[]) => {
+                await supabase.from('day_assignments').insert(
+                  group.map(swap => ({ date: swap.date, staff_id: profile!.id, replaced_staff_id: swap.user_id }))
+                );
+                await supabase.from('shift_requests').update({ status: 'approved' }).in('id', group.map(s => s.id));
+                await handleUpdate();
+              };
+
+              const declineGroup = async (group: any[]) => {
+                await supabase.from('shift_requests').update({ status: 'denied' }).in('id', group.map(s => s.id));
+                await handleUpdate();
+              };
+
+              return (
+                <>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2">Incoming Swap Requests</p>
+                  {grouped.map(group => {
+                    const requester = roster.find(r => r.id === group[0].user_id);
+                    const isDenied = group.every(s => s.status === 'denied');
+                    const sorted = [...group].sort((a, b) => a.date.localeCompare(b.date));
+                    return (
+                      <div key={group[0].user_id} className={`p-4 rounded-2xl border space-y-2 ${isDenied ? 'bg-gray-50 border-gray-100' : 'bg-blue-50 border-blue-100'}`}>
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-700">{requester?.full_name}</p>
+                            {isDenied && <p className="text-[9px] font-black uppercase text-gray-400">Declined — change mind?</p>}
+                          </div>
+                          {isDenied
+                            ? <button onClick={() => acceptGroup(group)} className="px-3 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">Accept</button>
+                            : <div className="flex gap-1">
+                                <button onClick={() => declineGroup(group)} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400 hover:text-red-500 transition-all">✕</button>
+                                <button onClick={() => acceptGroup(group)} className="px-2.5 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">✓</button>
+                              </div>
+                          }
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {sorted.map(s => (
+                            <span key={s.id} className="px-2 py-1 bg-white border border-blue-200 rounded-lg text-[9px] font-black uppercase text-blue-700">
+                              {format(parseISO(s.date), 'MMM d')}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="pt-2 border-t border-gray-100" />
+                </>
+              );
+            })()}
+
+            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2">Upcoming Shifts</p>
             {getDisplayDays()
               .filter(d => isSameMonth(new Date(d + 'T12:00:00'), referenceDate) && d >= format(new Date(), 'yyyy-MM-dd'))
               .filter(d => profile && getStaffForDate(d).some(s => s.id === profile.id))

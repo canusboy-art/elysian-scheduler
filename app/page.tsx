@@ -12,6 +12,7 @@ import DayDetailPanel from './DayDetailPanel';
 import WorkerDayPanel from './WorkerDayPanel';
 import SwapPopup from './SwapPopup';
 import MultiDaySwapModal from './MultiDaySwapModal';
+import MultiDayTimeOffModal from './MultiDayTimeOffModal';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
@@ -35,6 +36,7 @@ function CalendarContent() {
   const [showSwapPopup, setShowSwapPopup] = useState(false);
   const [multiSelectedDates, setMultiSelectedDates] = useState<string[]>([]);
   const [showMultiSwapModal, setShowMultiSwapModal] = useState(false);
+  const [showMultiTimeOffModal, setShowMultiTimeOffModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -215,7 +217,7 @@ function CalendarContent() {
               return (
                 <div key={dateStr} onClick={() => setSelectedDate(dateStr)}
                   className={`border-2 transition-all cursor-pointer relative rounded-[1.2rem] p-3 flex flex-col items-center justify-center gap-1
-                    ${isSelected ? 'ring-4 ring-emerald-400 border-emerald-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' : isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}
+                    ${isSelected ? 'ring-4 ring-violet-400 border-violet-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' : isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}
                     ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}
                     ${!isCurrentMonth ? 'opacity-20 grayscale' : 'opacity-100'}`}
                 >
@@ -225,7 +227,7 @@ function CalendarContent() {
                   {!isScheduler && isMeWorking && !isToday && !isPast && (
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleDaySelection(dateStr); }}
-                      className={`absolute top-2.5 right-2.5 w-4 h-4 rounded-full border-2 transition-all z-10 ${isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-emerald-300 bg-white hover:bg-emerald-100'}`}
+                      className={`absolute top-2.5 right-2.5 w-4 h-4 rounded-full border-2 transition-all z-10 ${isSelected ? 'bg-violet-500 border-violet-500' : 'border-emerald-300 bg-white hover:bg-violet-100'}`}
                     />
                   )}
                   {hasOverride && !multiSelectedDates.length && <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
@@ -243,16 +245,19 @@ function CalendarContent() {
         </div>
 
         {!isScheduler && multiSelectedDates.length > 0 && (
-          <div className="flex-none px-4 py-3 bg-white border-t flex items-center justify-between gap-4">
-            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">
-              {multiSelectedDates.length} {multiSelectedDates.length === 1 ? 'day' : 'days'} selected
+          <div className="flex-none px-4 py-3 bg-white border-t flex items-center justify-between gap-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-violet-600 flex-none">
+              {multiSelectedDates.length} {multiSelectedDates.length === 1 ? 'day' : 'days'}
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <button onClick={() => setMultiSelectedDates([])} className="px-4 py-2 bg-gray-100 rounded-xl font-black text-[10px] uppercase text-gray-400 hover:bg-gray-200 transition-all">
                 Clear
               </button>
-              <button onClick={() => setShowMultiSwapModal(true)} className="px-5 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all">
-                Request Swap
+              <button onClick={() => setShowMultiTimeOffModal(true)} className="px-4 py-2 bg-orange-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-orange-600 transition-all">
+                Time Off
+              </button>
+              <button onClick={() => setShowMultiSwapModal(true)} className="px-4 py-2 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all">
+                Swap
               </button>
             </div>
           </div>
@@ -375,6 +380,15 @@ function CalendarContent() {
           myProfile={profile}
           onDismiss={() => setShowSwapPopup(false)}
           onUpdate={handleUpdate}
+        />
+      )}
+
+      {showMultiTimeOffModal && profile && (
+        <MultiDayTimeOffModal
+          selectedDates={multiSelectedDates}
+          myProfile={profile}
+          onClose={() => setShowMultiTimeOffModal(false)}
+          onUpdate={async () => { setMultiSelectedDates([]); await handleUpdate(); }}
         />
       )}
 

@@ -104,7 +104,7 @@ export default function SwapPopup({ pendingSwaps, roster, myProfile, onDismiss, 
                   <span className={`text-[9px] font-black uppercase ${decided === 'approved' ? 'text-green-600' : 'text-red-500'}`}>
                     {decided === 'approved' ? '✓ Accepted' : '✕ Declined'}
                   </span>
-                ) : isConfirming ? (
+                ) : isConfirming && confirmDay ? (
                   <div className="flex gap-1 items-center">
                     <span className="text-[9px] font-black text-gray-400 uppercase mr-1">Sure?</span>
                     <button onClick={() => setConfirmDay(null)} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400">No</button>

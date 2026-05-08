@@ -198,8 +198,8 @@ function RosterContent() {
       </header>
 
       {view === 'cards' ? (
-        <div className="flex-1 p-8 overflow-y-auto bg-gray-50/50">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex-1 overflow-hidden p-5 bg-gray-50/50">
+          <div className="h-full grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr">
             {roster.map(staff => (
               <div key={staff.id} className="bg-white rounded-[2rem] border border-gray-200 p-6 flex flex-col justify-between shadow-sm transition-all hover:shadow-lg relative overflow-hidden group">
                 <div className="space-y-4">
@@ -247,68 +247,72 @@ function RosterContent() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 p-8 overflow-y-auto bg-gray-50/50">
-          <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm overflow-hidden">
-            <div className="grid grid-cols-[1fr_repeat(7,_56px)] border-b bg-gray-50">
-              <div className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400">Staff</div>
+        <div className="flex-1 overflow-hidden p-5 bg-gray-50/50 flex gap-4">
+          {/* Schedule grid */}
+          <div className="flex-1 overflow-hidden bg-white rounded-[2rem] border border-gray-200 shadow-sm flex flex-col">
+            <div className="grid grid-cols-[1fr_repeat(7,_52px)] border-b bg-gray-50 flex-none">
+              <div className="px-6 py-3 text-[10px] font-black uppercase tracking-widest text-gray-400">Staff</div>
               {DAY_LABELS.map((d, i) => (
-                <div key={d} className={`py-4 text-center text-[10px] font-black uppercase tracking-widest ${i < 5 ? 'text-gray-500' : 'text-gray-300'}`}>{d}</div>
+                <div key={d} className={`py-3 text-center text-[10px] font-black uppercase tracking-widest ${i < 5 ? 'text-gray-500' : 'text-gray-300'}`}>{d}</div>
               ))}
             </div>
-            {groups.map((group) => (
-              <div key={group.label}>
-                <div className={`px-6 py-3 text-[9px] font-black uppercase tracking-[0.3em] ${group.color} bg-gray-50/60 border-b border-t`}>{group.label}</div>
-                {group.list.map((staff, idx) => (
-                  <div key={staff.id} className={`grid grid-cols-[1fr_repeat(7,_56px)] items-center transition-all ${group.row} ${idx < group.list.length - 1 ? 'border-b border-gray-50' : ''}`}>
-                    <div className="px-6 py-4 flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full flex-none ${group.dot}`} />
-                      <span className="font-black text-sm uppercase tracking-tight">{staff.full_name}</span>
-                      {staff.is_prn && <span className="text-[8px] font-black uppercase bg-amber-100 text-amber-600 px-2 py-0.5 rounded-md">PRN</span>}
-                      {staff.auth_user_id && <CheckCircle2 size={12} className="text-green-400 ml-1" />}
+            <div className="flex-1 overflow-y-auto">
+              {groups.map((group) => (
+                <div key={group.label}>
+                  <div className={`px-6 py-2 text-[9px] font-black uppercase tracking-[0.3em] ${group.color} bg-gray-50/60 border-b border-t`}>{group.label}</div>
+                  {group.list.map((staff, idx) => (
+                    <div key={staff.id} className={`grid grid-cols-[1fr_repeat(7,_52px)] items-center transition-all ${group.row} ${idx < group.list.length - 1 ? 'border-b border-gray-50' : ''}`}>
+                      <div className="px-6 py-3 flex items-center gap-3">
+                        <div className={`w-2 h-2 rounded-full flex-none ${group.dot}`} />
+                        <span className="font-black text-sm uppercase tracking-tight">{staff.full_name}</span>
+                        {staff.is_prn && <span className="text-[8px] font-black uppercase bg-amber-100 text-amber-600 px-2 py-0.5 rounded-md">PRN</span>}
+                        {staff.auth_user_id && <CheckCircle2 size={12} className="text-green-400 ml-1" />}
+                      </div>
+                      {DAYS.map((day) => {
+                        const isActive = staff[`works_${day}`];
+                        return (
+                          <div key={day} className="flex items-center justify-center py-2.5">
+                            <button onClick={() => handleDayToggle(staff.id, day, isActive)} className={`w-7 h-7 rounded-xl transition-all active:scale-90 ${isActive ? `${group.dot} shadow-sm` : 'bg-gray-100 hover:bg-gray-200'}`} />
+                          </div>
+                        );
+                      })}
                     </div>
-                    {DAYS.map((day) => {
-                      const isActive = staff[`works_${day}`];
-                      return (
-                        <div key={day} className="flex items-center justify-center py-3">
-                          <button onClick={() => handleDayToggle(staff.id, day, isActive)} className={`w-8 h-8 rounded-xl transition-all active:scale-90 ${isActive ? `${group.dot} shadow-sm` : 'bg-gray-100 hover:bg-gray-200'}`} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            ))}
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
 
+          {/* Settings sidebar */}
           {isManager && (
-            <div className="mt-6 bg-white rounded-[2rem] border border-gray-200 shadow-sm p-8">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-8">Staffing Minimums</h3>
-              <div className="flex gap-12">
+            <div className="w-64 flex-none bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col gap-6">
+              <div>
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-5">Staffing Minimums</h3>
                 {[
                   { label: 'Weekday', fields: ['min_pt_weekday', 'min_ot_weekday', 'min_st_weekday'] },
                   { label: 'Weekend', fields: ['min_pt_weekend', 'min_ot_weekend', 'min_st_weekend'] },
                 ].map(({ label, fields }) => (
-                  <div key={label}>
-                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 mb-4">{label}</p>
-                    <div className="flex gap-4">
+                  <div key={label} className="mb-5">
+                    <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 mb-3">{label}</p>
+                    <div className="flex gap-3">
                       {fields.map((field, i) => (
-                        <div key={field} className="flex flex-col items-center gap-2">
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${['text-blue-600', 'text-purple-600', 'text-emerald-600'][i]}`}>{['PT', 'OT', 'ST'][i]}</span>
-                          <input type="number" min={0} value={settings[field as keyof typeof settings]} onChange={(e) => updateSetting(field, parseInt(e.target.value) || 0)} className="w-16 text-center p-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xl focus:ring-4 focus:ring-blue-100 transition-all outline-none" />
+                        <div key={field} className="flex flex-col items-center gap-1.5">
+                          <span className={`text-[9px] font-black uppercase tracking-widest ${['text-blue-600', 'text-purple-600', 'text-emerald-600'][i]}`}>{['PT', 'OT', 'ST'][i]}</span>
+                          <input type="number" min={0} value={settings[field as keyof typeof settings]} onChange={(e) => updateSetting(field, parseInt(e.target.value) || 0)} className="w-14 text-center p-2 bg-gray-50 border border-gray-100 rounded-xl font-black text-lg focus:ring-4 focus:ring-blue-100 transition-all outline-none" />
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 mb-4">PRN Minimum Days / Month</p>
-                <div className="flex items-center gap-4">
+              <div className="border-t border-gray-100 pt-5">
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 mb-3">PRN Min / Month</p>
+                <div className="flex items-center gap-3">
                   <input type="number" min={0} value={settings.min_prn_days}
                     onChange={(e) => updateSetting('min_prn_days', parseInt(e.target.value) || 0)}
-                    className="w-16 text-center p-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xl focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                    className="w-14 text-center p-2 bg-gray-50 border border-gray-100 rounded-xl font-black text-lg focus:ring-4 focus:ring-blue-100 transition-all outline-none"
                   />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">days before flagged in Insights</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400">days</p>
                 </div>
               </div>
             </div>

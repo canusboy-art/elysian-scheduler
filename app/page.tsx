@@ -173,7 +173,8 @@ function CalendarContent() {
             <h1 className="text-2xl font-black italic tracking-tighter border-l-8 border-blue-600 pl-4 uppercase">Elysian Scheduler</h1>
             {isScheduler && (
               <nav className="flex gap-6 ml-6 border-l-2 pl-8">
-                <Link href={`/roster?m=${format(referenceDate, 'yyyy-MM-dd')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Manage Master Roster</Link>
+                <Link href={`/roster?m=${format(referenceDate, 'yyyy-MM-dd')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Manage Roster</Link>
+                <Link href={`/insights?m=${format(referenceDate, 'yyyy-MM')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Insights</Link>
               </nav>
             )}
           </div>

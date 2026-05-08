@@ -17,7 +17,7 @@ function RosterContent() {
   const isManager = myProfile?.role === 'scheduler';
 
   const [roster, setRoster] = useState<any[]>([]);
-  const [settings, setSettings] = useState({ min_pt_weekday: 1, min_ot_weekday: 1, min_st_weekday: 1, min_pt_weekend: 1, min_ot_weekend: 1, min_st_weekend: 1 });
+  const [settings, setSettings] = useState({ min_pt_weekday: 1, min_ot_weekday: 1, min_st_weekday: 1, min_pt_weekend: 1, min_ot_weekend: 1, min_st_weekend: 1, min_prn_days: 4 });
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<'cards' | 'schedule'>('cards');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -282,7 +282,7 @@ function RosterContent() {
 
           {isManager && (
             <div className="mt-6 bg-white rounded-[2rem] border border-gray-200 shadow-sm p-8">
-              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-8">Staffing Minimums Per Day</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-8">Staffing Minimums</h3>
               <div className="flex gap-12">
                 {[
                   { label: 'Weekday', fields: ['min_pt_weekday', 'min_ot_weekday', 'min_st_weekday'] },
@@ -300,6 +300,16 @@ function RosterContent() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-300 mb-4">PRN Minimum Days / Month</p>
+                <div className="flex items-center gap-4">
+                  <input type="number" min={0} value={settings.min_prn_days}
+                    onChange={(e) => updateSetting('min_prn_days', parseInt(e.target.value) || 0)}
+                    className="w-16 text-center p-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xl focus:ring-4 focus:ring-blue-100 transition-all outline-none"
+                  />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">days before flagged in Insights</p>
+                </div>
               </div>
             </div>
           )}

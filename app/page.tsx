@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
   format, subMonths, addMonths,
-  isSameDay, isSameMonth, startOfWeek, parseISO, getDay, addDays, eachDayOfInterval, startOfMonth
+  isSameDay, isSameMonth, startOfWeek, parseISO, getDay, addDays, eachDayOfInterval, startOfMonth, endOfMonth
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Activity, CheckCircle2, Target, AlertTriangle, LogOut, Check, X } from 'lucide-react';
 import DayDetailPanel from './DayDetailPanel';
@@ -15,6 +15,28 @@ import MultiDaySwapModal from './MultiDaySwapModal';
 import MultiDayTimeOffModal from './MultiDayTimeOffModal';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+
+function getHolidayName(dateStr: string): string | null {
+  const y = dateStr.slice(0, 4);
+  const fixed: Record<string, string> = {
+    [`${y}-01-01`]: "New Year's Day",
+    [`${y}-06-19`]: 'Juneteenth',
+    [`${y}-07-04`]: 'Independence Day',
+    [`${y}-11-11`]: 'Veterans Day',
+    [`${y}-12-25`]: 'Christmas',
+  };
+  if (fixed[dateStr]) return fixed[dateStr];
+  // Floating: MLK (3rd Mon Jan), Presidents (3rd Mon Feb), Memorial (last Mon May),
+  // Labor (1st Mon Sep), Thanksgiving (4th Thu Nov)
+  const date = new Date(dateStr + 'T12:00:00');
+  const m = date.getMonth(); const dow = date.getDay(); const d = date.getDate();
+  if (m === 0 && dow === 1 && d >= 15 && d <= 21) return 'MLK Day';
+  if (m === 1 && dow === 1 && d >= 15 && d <= 21) return "Presidents' Day";
+  if (m === 4 && dow === 1 && d >= 25) return 'Memorial Day';
+  if (m === 8 && dow === 1 && d <= 7) return 'Labor Day';
+  if (m === 10 && dow === 4 && d >= 22 && d <= 28) return 'Thanksgiving';
+  return null;
+}
 
 function CalendarContent() {
   const router = useRouter();
@@ -365,67 +387,65 @@ function CalendarContent() {
               )}
             </div>
           )
-        ) : (
-          <div className="flex-1 overflow-y-auto p-5 space-y-2">
-            {(() => {
-              const allIncoming = [...pendingSwaps, ...deniedSwaps];
-              const grouped = Object.values(
-                allIncoming.reduce((acc: any, s: any) => {
-                  if (!acc[s.user_id]) acc[s.user_id] = [];
-                  acc[s.user_id].push(s);
-                  return acc;
-                }, {})
-              ) as any[][];
+        ) : (() => {
+          const allIncoming = [...pendingSwaps, ...deniedSwaps];
+          const incomingGrouped = Object.values(
+            allIncoming.reduce((acc: any, s: any) => {
+              if (!acc[s.user_id]) acc[s.user_id] = [];
+              acc[s.user_id].push(s);
+              return acc;
+            }, {})
+          ) as any[][];
 
-              if (grouped.length === 0) return null;
+          const decidePanelDay = async (swap: any, action: 'accept' | 'decline') => {
+            setConfirmAction(null);
+            if (action === 'accept') {
+              await supabase.from('day_assignments').insert([{ date: swap.date, staff_id: profile!.id, replaced_staff_id: swap.user_id }]);
+            }
+            await supabase.from('shift_requests').update({ status: action === 'accept' ? 'approved' : 'denied' }).eq('id', swap.id);
+            await handleUpdate();
+          };
 
-              const decidePanelDay = async (swap: any, action: 'accept' | 'decline') => {
-                setConfirmAction(null);
-                if (action === 'accept') {
-                  await supabase.from('day_assignments').insert([{
-                    date: swap.date, staff_id: profile!.id, replaced_staff_id: swap.user_id,
-                  }]);
-                }
-                await supabase.from('shift_requests').update({
-                  status: action === 'accept' ? 'approved' : 'denied',
-                }).eq('id', swap.id);
-                await handleUpdate();
-              };
+          const monthShifts = eachDayOfInterval({ start: startOfMonth(referenceDate), end: endOfMonth(referenceDate) })
+            .map(d => format(d, 'yyyy-MM-dd'))
+            .filter(d => d >= format(new Date(), 'yyyy-MM-dd'))
+            .filter(d => profile && getStaffForDate(d).some(s => s.id === profile.id));
 
-              return (
-                <>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2">Incoming Swap Requests</p>
-                  {grouped.map(group => {
+          const statusStyles: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+            pending:  { bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-600' },
+            approved: { bg: 'bg-green-50',  border: 'border-green-100',  text: 'text-green-700',  badge: 'bg-green-100 text-green-700' },
+            denied:   { bg: 'bg-red-50',    border: 'border-red-100',    text: 'text-red-700',    badge: 'bg-red-100 text-red-600' },
+          };
+
+          return (
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Incoming swap requests */}
+              {incomingGrouped.length > 0 && (
+                <div className="flex-none border-b overflow-y-auto max-h-[32%] p-4 space-y-2">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Incoming Swaps</p>
+                  {incomingGrouped.map(group => {
                     const requester = roster.find(r => r.id === group[0].user_id);
                     const sorted = [...group].sort((a: any, b: any) => a.date.localeCompare(b.date));
                     return (
-                      <div key={group[0].user_id} className="p-4 rounded-2xl border border-blue-100 bg-blue-50 space-y-2">
+                      <div key={group[0].user_id} className="p-3 rounded-2xl border border-blue-100 bg-blue-50 space-y-1.5">
                         <p className="text-[10px] font-black uppercase tracking-widest text-blue-700">{requester?.full_name}</p>
-                        {group[0].reason && <p className="text-[9px] text-gray-500 italic">"{group[0].reason}"</p>}
-                        <div className="space-y-1.5 pt-1">
+                        <div className="space-y-1">
                           {sorted.map((swap: any) => {
                             const isConfirming = confirmAction?.id === swap.id;
-                            const statusColor = swap.status === 'approved' ? 'text-green-600' : swap.status === 'denied' ? 'text-red-500' : '';
                             return (
-                              <div key={swap.id} className={`flex items-center justify-between p-2.5 rounded-xl border ${swap.status === 'approved' ? 'bg-green-50 border-green-200' : swap.status === 'denied' ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`}>
+                              <div key={swap.id} className={`flex items-center justify-between p-2 rounded-xl border ${swap.status === 'approved' ? 'bg-green-50 border-green-200' : swap.status === 'denied' ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`}>
                                 <span className="text-[10px] font-black uppercase text-gray-700">{format(parseISO(swap.date), 'EEE, MMM d')}</span>
                                 {swap.status !== 'pending' ? (
-                                  <span className={`text-[9px] font-black uppercase ${statusColor}`}>
-                                    {swap.status === 'approved' ? '✓ Accepted' : '✕ Declined'}
-                                  </span>
-                                ) : isConfirming ? (
-                                  (() => { const ca = confirmAction!; return (
-                                    <div className="flex gap-1 items-center">
-                                      <span className="text-[9px] font-black text-gray-400 uppercase">Sure?</span>
-                                      <button onClick={() => setConfirmAction(null)} className="px-2 py-1 bg-white border border-gray-200 rounded-lg font-black text-[9px] uppercase text-gray-400">No</button>
-                                      <button onClick={() => decidePanelDay(swap, ca.action as 'accept' | 'decline')}
-                                        className={`px-2 py-1 rounded-lg font-black text-[9px] uppercase text-white ${ca.action === 'accept' ? 'bg-blue-600' : 'bg-red-500'}`}>Yes</button>
-                                    </div>
-                                  ); })()
+                                  <span className={`text-[9px] font-black uppercase ${swap.status === 'approved' ? 'text-green-600' : 'text-red-500'}`}>{swap.status === 'approved' ? '✓' : '✕'}</span>
+                                ) : isConfirming && confirmAction ? (
+                                  <div className="flex gap-1">
+                                    <button onClick={() => setConfirmAction(null)} className="px-2 py-1 bg-white border border-gray-200 rounded-lg font-black text-[9px] text-gray-400">No</button>
+                                    <button onClick={() => decidePanelDay(swap, confirmAction.action as 'accept' | 'decline')} className={`px-2 py-1 rounded-lg font-black text-[9px] text-white ${confirmAction.action === 'accept' ? 'bg-blue-600' : 'bg-red-500'}`}>Yes</button>
+                                  </div>
                                 ) : (
                                   <div className="flex gap-1">
-                                    <button onClick={() => setConfirmAction({ id: swap.id, action: 'decline' })} className="px-2 py-1 bg-white border border-gray-100 rounded-lg font-black text-[9px] uppercase text-gray-400 hover:text-red-500 transition-all">✕</button>
-                                    <button onClick={() => setConfirmAction({ id: swap.id, action: 'accept' })} className="px-2 py-1 bg-blue-600 text-white rounded-lg font-black text-[9px] uppercase">✓</button>
+                                    <button onClick={() => setConfirmAction({ id: swap.id, action: 'decline' })} className="px-2 py-1 bg-white border border-gray-100 rounded-lg font-black text-[9px] text-gray-400 hover:text-red-500">✕</button>
+                                    <button onClick={() => setConfirmAction({ id: swap.id, action: 'accept' })} className="px-2 py-1 bg-blue-600 text-white rounded-lg font-black text-[9px]">✓</button>
                                   </div>
                                 )}
                               </div>
@@ -435,69 +455,67 @@ function CalendarContent() {
                       </div>
                     );
                   })}
-                  <div className="pt-2 border-t border-gray-100" />
-                </>
-              );
-            })()}
+                </div>
+              )}
 
-            {myOutgoingRequests.length > 0 && (
-              <>
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2 pt-1">My Requests</p>
-                {Object.values(
-                  myOutgoingRequests.reduce((acc: any, r: any) => {
-                    const key = `${r.type}-${r.target_user_id || 'none'}-${r.status}`;
-                    if (!acc[key]) acc[key] = [];
-                    acc[key].push(r);
-                    return acc;
-                  }, {})
-                ).map((group: any) => {
-                  const isSwap = group[0].type === 'swap';
-                  const status = group[0].status;
-                  const target = isSwap ? roster.find(r => r.id === group[0].target_user_id) : null;
-                  const sorted = [...group].sort((a: any, b: any) => a.date.localeCompare(b.date));
-                  const statusStyles: Record<string, { bg: string; border: string; text: string; badge: string }> = {
-                    pending:  { bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-600' },
-                    approved: { bg: 'bg-green-50',  border: 'border-green-100',  text: 'text-green-700',  badge: 'bg-green-100 text-green-700' },
-                    denied:   { bg: 'bg-red-50',    border: 'border-red-100',    text: 'text-red-700',    badge: 'bg-red-100 text-red-600' },
-                  };
-                  const s = statusStyles[status] || statusStyles.pending;
+              {/* My requests */}
+              {myOutgoingRequests.length > 0 && (
+                <div className="flex-none border-b overflow-y-auto max-h-[28%] p-4 space-y-2">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">My Requests</p>
+                  {Object.values(
+                    myOutgoingRequests.reduce((acc: any, r: any) => {
+                      const key = `${r.type}-${r.target_user_id || 'none'}-${r.status}`;
+                      if (!acc[key]) acc[key] = []; acc[key].push(r); return acc;
+                    }, {})
+                  ).map((group: any) => {
+                    const isSwap = group[0].type === 'swap';
+                    const status = group[0].status;
+                    const target = isSwap ? roster.find(r => r.id === group[0].target_user_id) : null;
+                    const s = statusStyles[status] || statusStyles.pending;
+                    return (
+                      <div key={group[0].type + group[0].target_user_id + status} className={`p-3 rounded-2xl border ${s.bg} ${s.border}`}>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <p className={`text-[10px] font-black uppercase tracking-widest ${s.text}`}>{isSwap ? `Swap → ${target?.full_name || '?'}` : 'Time Off'}</p>
+                          <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-lg ${s.badge}`}>{status}</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {[...group].sort((a: any, b: any) => a.date.localeCompare(b.date)).map((r: any) => (
+                            <span key={r.id} className={`px-2 py-0.5 bg-white border rounded-lg text-[9px] font-black uppercase ${s.border} ${s.text}`}>{format(parseISO(r.date), 'MMM d')}</span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Upcoming shifts */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-1.5">
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Upcoming Shifts</p>
+                {monthShifts.length === 0 ? (
+                  <p className="text-[9px] font-black uppercase text-gray-300 tracking-widest">No upcoming shifts this month</p>
+                ) : monthShifts.map(d => {
+                  const holiday = getHolidayName(d);
+                  const dow = getDay(new Date(d + 'T12:00:00'));
+                  const isWeekend = dow === 0 || dow === 6;
                   return (
-                    <div key={group[0].type + group[0].target_user_id + status} className={`p-4 rounded-2xl border space-y-2 ${s.bg} ${s.border}`}>
-                      <div className="flex justify-between items-center">
-                        <p className={`text-[10px] font-black uppercase tracking-widest ${s.text}`}>
-                          {isSwap ? `Swap → ${target?.full_name || 'Unknown'}` : 'Time Off'}
+                    <button key={d} onClick={() => setSelectedDate(d)}
+                      className={`w-full text-left p-3 border rounded-2xl transition-all hover:shadow-sm ${holiday ? 'bg-red-50 border-red-100 hover:border-red-300' : isWeekend ? 'bg-amber-50 border-amber-100 hover:border-amber-300' : 'bg-emerald-50 border-emerald-100 hover:border-emerald-300'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${holiday ? 'text-red-700' : isWeekend ? 'text-amber-700' : 'text-emerald-700'}`}>
+                          {format(new Date(d + 'T12:00:00'), 'EEE, MMM d')}
                         </p>
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${s.badge}`}>{status}</span>
+                        {holiday && <span className="text-[8px] font-black uppercase text-red-500 bg-red-100 px-2 py-0.5 rounded-lg">{holiday}</span>}
+                        {!holiday && isWeekend && <span className="text-[8px] font-black uppercase text-amber-500 bg-amber-100 px-2 py-0.5 rounded-lg">Weekend</span>}
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {sorted.map((r: any) => (
-                          <span key={r.id} className={`px-2 py-1 bg-white border rounded-lg text-[9px] font-black uppercase ${s.border} ${s.text}`}>
-                            {format(parseISO(r.date), 'MMM d')}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
+                    </button>
                   );
                 })}
-                <div className="pt-1 border-t border-gray-100" />
-              </>
-            )}
-
-            <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2">Upcoming Shifts</p>
-            {getDisplayDays()
-              .filter(d => isSameMonth(new Date(d + 'T12:00:00'), referenceDate) && d >= format(new Date(), 'yyyy-MM-dd'))
-              .filter(d => profile && getStaffForDate(d).some(s => s.id === profile.id))
-              .slice(0, 10)
-              .map(d => (
-                <button key={d} onClick={() => setSelectedDate(d)}
-                  className="w-full text-left p-4 bg-emerald-50 border border-emerald-100 hover:border-emerald-300 rounded-2xl transition-all"
-                >
-                  <p className="text-[10px] font-black uppercase tracking-widest text-emerald-700">{format(new Date(d + 'T12:00:00'), 'EEE, MMM d')}</p>
-                </button>
-              ))
-            }
-          </div>
-        )}
+              </div>
+            </div>
+          );
+        })()}
       </aside>
 
       {selectedDate && isScheduler && (

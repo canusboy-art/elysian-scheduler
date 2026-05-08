@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, StickyNote, Activity, RefreshCcw, ArrowRightLeft } from 'lucide-react';
+import { X, Activity, RefreshCcw, ArrowRightLeft, UserPlus, CalendarPlus, UserMinus } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
 interface Props {
@@ -15,11 +15,46 @@ interface Props {
 export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClose, onUpdate }: Props) {
   const [loading, setLoading] = useState(false);
   const [showReplaceModal, setShowReplaceModal] = useState<any | null>(null);
+  const [showAddModal, setShowAddModal] = useState<'pt' | 'ot' | 'st' | null>(null);
+  const [showSlotModal, setShowSlotModal] = useState(false);
+  const [slotNote, setSlotNote] = useState('');
+
+  async function handleOpenSlot() {
+    setLoading(true);
+    await supabase.from('shifts').insert([{ date: shift.date, status: 'vacant', admin_note: slotNote || null }]);
+    setSlotNote('');
+    setShowSlotModal(false);
+    onUpdate();
+    setLoading(false);
+  }
+
+  async function handleAdd(staffId: string) {
+    setLoading(true);
+    const { error } = await supabase.from('day_assignments').insert([{
+      date: shift.date,
+      staff_id: staffId,
+      replaced_staff_id: null
+    }]);
+    if (!error) { setShowAddModal(null); onUpdate(); }
+    setLoading(false);
+  }
+
+  const getEligibleAdditions = (discipline: 'pt' | 'ot' | 'st') =>
+    (allStaff || []).filter(s =>
+      !( scheduledStaff || []).some(ss => ss.id === s.id) && s[`is_${discipline}`]
+    );
 
   async function resetDay() {
     if (!confirm("Reset to Master Roster? This will remove all manual swaps for this day.")) return;
     setLoading(true);
     await supabase.from('day_assignments').delete().eq('date', shift.date);
+    onUpdate();
+    setLoading(false);
+  }
+
+  async function handleRemove(staffId: string) {
+    setLoading(true);
+    await supabase.from('day_assignments').insert([{ date: shift.date, staff_id: null, replaced_staff_id: staffId }]);
     onUpdate();
     setLoading(false);
   }
@@ -73,6 +108,9 @@ export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClos
             <p className="text-[10px] font-black text-blue-400 uppercase mt-3 tracking-[0.3em]">{shift.date}</p>
           </div>
           <div className="flex gap-4">
+            <button onClick={() => setShowSlotModal(true)} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-xl text-[10px] font-black uppercase transition-all text-emerald-300">
+              <CalendarPlus size={14} /> Open Slot
+            </button>
             <button onClick={resetDay} disabled={loading} className="flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-[10px] font-black uppercase transition-all disabled:opacity-50">
               <RefreshCcw size={14} className={loading ? 'animate-spin' : ''} /> Reset Day
             </button>
@@ -82,13 +120,19 @@ export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClos
 
         <div className="flex-1 overflow-y-auto p-10 space-y-12">
           {[
-            { title: 'Physical Therapy', list: pts, color: 'text-blue-600', icon: 'P', bg: 'bg-blue-600' },
-            { title: 'Occupational Therapy', list: ots, color: 'text-purple-600', icon: 'O', bg: 'bg-purple-600' },
-            { title: 'Speech Therapy', list: sts, color: 'text-emerald-600', icon: 'S', bg: 'bg-emerald-600' }
+            { title: 'Physical Therapy', discipline: 'pt' as const, list: pts, color: 'text-blue-600', icon: 'P', bg: 'bg-blue-600' },
+            { title: 'Occupational Therapy', discipline: 'ot' as const, list: ots, color: 'text-purple-600', icon: 'O', bg: 'bg-purple-600' },
+            { title: 'Speech Therapy', discipline: 'st' as const, list: sts, color: 'text-emerald-600', icon: 'S', bg: 'bg-emerald-600' }
           ].map((group) => (
             <section key={group.title} className="space-y-5">
-              <h3 className={`text-xs font-black uppercase tracking-[0.3em] flex items-center gap-3 ${group.color}`}>
-                <Activity size={18} /> {group.title}
+              <h3 className={`text-xs font-black uppercase tracking-[0.3em] flex items-center justify-between ${group.color}`}>
+                <span className="flex items-center gap-3"><Activity size={18} /> {group.title}</span>
+                <button
+                  onClick={() => setShowAddModal(group.discipline)}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-[9px] font-black uppercase text-gray-400 hover:text-blue-600 hover:border-blue-200 transition-all active:scale-95"
+                >
+                  <UserPlus size={11} /> Add
+                </button>
               </h3>
               <div className="grid grid-cols-1 gap-3">
                 {group.list.map(staff => (
@@ -97,18 +141,87 @@ export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClos
                       <div className={`w-8 h-8 ${group.bg} rounded-xl flex items-center justify-center text-white font-black text-[10px]`}>{group.icon}</div>
                       <span className="font-black text-sm uppercase tracking-tight">{staff.full_name}</span>
                     </div>
-                    <button 
-                      onClick={() => setShowReplaceModal(staff)}
-                      className="opacity-0 group-hover:opacity-100 flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-sm rounded-xl text-[9px] font-black uppercase text-gray-400 hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95"
-                    >
-                      <ArrowRightLeft size={12} /> Replace
-                    </button>
+                    <div className="opacity-0 group-hover:opacity-100 flex gap-2 transition-all">
+                      <button
+                        onClick={() => setShowReplaceModal(staff)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-sm rounded-xl text-[9px] font-black uppercase text-gray-400 hover:text-blue-600 hover:border-blue-100 transition-all active:scale-95"
+                      >
+                        <ArrowRightLeft size={12} /> Replace
+                      </button>
+                      <button
+                        onClick={() => handleRemove(staff.id)}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 shadow-sm rounded-xl text-[9px] font-black uppercase text-gray-400 hover:text-red-500 hover:border-red-100 transition-all active:scale-95"
+                      >
+                        <UserMinus size={12} /> Remove
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             </section>
           ))}
         </div>
+
+        {/* OPEN SLOT MODAL */}
+        {showSlotModal && (
+          <div className="absolute inset-0 z-[1000] bg-white flex flex-col p-12 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-10">
+              <div>
+                <h3 className="text-3xl font-black uppercase tracking-tighter">Open a Slot</h3>
+                <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mt-3">{shift.date}</p>
+              </div>
+              <button onClick={() => setShowSlotModal(false)} className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all"><X size={24} /></button>
+            </div>
+            <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-4">Staff not scheduled this day will be able to sign up.</p>
+            <input
+              autoFocus value={slotNote} onChange={e => setSlotNote(e.target.value)}
+              placeholder="Note (optional — e.g. 'Morning shift')"
+              className="w-full p-4 bg-gray-50 rounded-2xl font-medium text-sm text-gray-900 placeholder:text-gray-400 outline-none focus:ring-4 focus:ring-emerald-100 transition-all mb-6"
+            />
+            <div className="flex gap-3 mt-auto">
+              <button onClick={() => setShowSlotModal(false)} className="flex-1 py-4 bg-gray-100 rounded-xl font-black text-[10px] uppercase text-gray-400">Cancel</button>
+              <button onClick={handleOpenSlot} disabled={loading} className="flex-1 py-4 bg-emerald-600 rounded-xl font-black text-[10px] uppercase text-white shadow-xl disabled:bg-gray-300">
+                {loading ? 'Saving...' : 'Open Slot'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ADD MODAL OVERLAY */}
+        {showAddModal && (
+          <div className="absolute inset-0 z-[1000] bg-white flex flex-col p-12 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-12">
+              <div>
+                <h3 className="text-3xl font-black uppercase tracking-tighter">Add Staff</h3>
+                <p className="text-[10px] font-black text-blue-600 uppercase tracking-[0.2em] mt-3">
+                  Adding {showAddModal.toUpperCase()} to {shift.date}
+                </p>
+              </div>
+              <button onClick={() => setShowAddModal(null)} className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all"><X size={24} /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto space-y-3 pr-4">
+              <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-6">Available staff not already on roster</p>
+              {getEligibleAdditions(showAddModal).length === 0 ? (
+                <div className="py-20 text-center border-2 border-dashed border-gray-100 rounded-[2rem]">
+                  <p className="text-xs font-black text-gray-300 uppercase tracking-widest">No available {showAddModal.toUpperCase()}s</p>
+                </div>
+              ) : (
+                getEligibleAdditions(showAddModal).map(s => (
+                  <button
+                    key={s.id}
+                    disabled={loading}
+                    onClick={() => handleAdd(s.id)}
+                    className="w-full text-left p-6 bg-white hover:bg-blue-50 border-2 border-gray-50 hover:border-blue-100 rounded-[2rem] font-black uppercase text-sm flex justify-between items-center group transition-all"
+                  >
+                    <span className="group-hover:text-blue-600 transition-colors">{s.full_name}</span>
+                    <span className="text-[10px] text-blue-600 opacity-0 group-hover:opacity-100 tracking-widest transition-all">Add →</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* SWAP MODAL OVERLAY */}
         {showReplaceModal && (

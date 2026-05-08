@@ -62,6 +62,7 @@ function CalendarContent() {
   const [showMultiSwapModal, setShowMultiSwapModal] = useState(false);
   const [showMultiTimeOffModal, setShowMultiTimeOffModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ id: string; action: string } | null>(null);
+  const [showMobilePanel, setShowMobilePanel] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) router.push('/login');
@@ -189,29 +190,26 @@ function CalendarContent() {
 
   return (
     <main className="flex h-screen w-full bg-white overflow-hidden text-black font-sans isolate">
-      <section className="w-[72%] h-full flex flex-col border-r border-gray-100">
-        <header className="h-20 flex-none border-b flex justify-between items-center px-10 bg-white">
-          <div className="flex items-center gap-10">
-            <h1 className="text-2xl font-black italic tracking-tighter border-l-8 border-blue-600 pl-4 uppercase">Elysian Scheduler</h1>
+      <section className="w-full md:w-[72%] h-full flex flex-col border-r border-gray-100">
+        <header className="h-16 md:h-20 flex-none border-b flex justify-between items-center px-4 md:px-10 bg-white">
+          <div className="flex items-center gap-3 md:gap-10">
+            <h1 className="text-lg md:text-2xl font-black italic tracking-tighter border-l-4 md:border-l-8 border-blue-600 pl-3 md:pl-4 uppercase">Elysian</h1>
             {isScheduler && (
-              <nav className="flex gap-6 ml-6 border-l-2 pl-8">
+              <nav className="hidden md:flex gap-6 ml-6 border-l-2 pl-8">
                 <Link href={`/roster?m=${format(referenceDate, 'yyyy-MM-dd')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Manage Roster</Link>
                 <Link href={`/insights?m=${format(referenceDate, 'yyyy-MM')}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all">Insights</Link>
               </nav>
             )}
           </div>
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigateMonth('today')} className="flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95"><Target size={14} /> Today</button>
-            <div className="flex items-center bg-gray-50 rounded-2xl p-1 border">
-              <button onClick={() => navigateMonth('prev')} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronLeft size={18} /></button>
-              <span className="text-[11px] font-black uppercase tracking-[0.2em] px-6 min-w-[160px] text-center">{format(referenceDate, 'MMMM yyyy')}</span>
-              <button onClick={() => navigateMonth('next')} className="p-2 hover:bg-white hover:shadow-sm rounded-xl transition-all"><ChevronRight size={18} /></button>
+          <div className="flex items-center gap-2 md:gap-4">
+            <button onClick={() => navigateMonth('today')} className="hidden md:flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-600 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-100 transition-all active:scale-95"><Target size={14} /> Today</button>
+            <div className="flex items-center bg-gray-50 rounded-xl md:rounded-2xl p-1 border">
+              <button onClick={() => navigateMonth('prev')} className="p-1.5 md:p-2 hover:bg-white hover:shadow-sm rounded-lg md:rounded-xl transition-all"><ChevronLeft size={16} /></button>
+              <span className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.15em] md:tracking-[0.2em] px-2 md:px-6 min-w-[90px] md:min-w-[160px] text-center">{format(referenceDate, 'MMM yyyy')}</span>
+              <button onClick={() => navigateMonth('next')} className="p-1.5 md:p-2 hover:bg-white hover:shadow-sm rounded-lg md:rounded-xl transition-all"><ChevronRight size={16} /></button>
             </div>
-            <div className="flex items-center gap-3 pl-2 border-l">
-              <div className="text-right">
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-900 leading-none">{profile?.full_name || user?.email}</p>
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mt-0.5">{profile?.role || 'worker'}</p>
-              </div>
+            <div className="flex items-center gap-2 md:gap-3 pl-2 border-l">
+              <p className="hidden md:block text-[10px] font-black uppercase tracking-widest text-gray-900 leading-none">{profile?.full_name || user?.email}</p>
               <button onClick={signOut} className="p-2 text-gray-300 hover:text-red-500 transition-colors" title="Sign out"><LogOut size={16} /></button>
             </div>
           </div>
@@ -250,7 +248,7 @@ function CalendarContent() {
 
               return (
                 <div key={dateStr} onClick={() => setSelectedDate(dateStr)}
-                  className={`border-2 transition-all cursor-pointer relative rounded-[1.2rem] p-3 flex flex-col items-center justify-center gap-1
+                  className={`border-2 transition-all cursor-pointer relative rounded-[1rem] md:rounded-[1.2rem] p-1.5 md:p-3 flex flex-col items-center justify-center gap-0.5 md:gap-1
                     ${isSelected ? 'ring-4 ring-violet-400 border-violet-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' : isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}
                     ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}
                     ${!isCurrentMonth ? 'opacity-20 grayscale' : 'opacity-100'}`}
@@ -270,10 +268,10 @@ function CalendarContent() {
                   {hasDeniedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" />}
                   {hasApprovedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500" />}
                   {hasOpenSlot && !isToday && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                  <div className="flex flex-col gap-1 w-full max-w-[75px]">
-                    <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
-                    <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : otCount < minOt ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-purple-700'}`}><span>OT</span><span>{otCount}</span></div>
-                    <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : stCount < minSt ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-700'}`}><span>ST</span><span>{stCount}</span></div>
+                  <div className="flex flex-col gap-0.5 md:gap-1 w-full max-w-[75px]">
+                    <div className={`flex justify-between px-1 md:px-2 py-0.5 md:py-1 rounded md:rounded-md border font-black text-[7px] md:text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
+                    <div className={`flex justify-between px-1 md:px-2 py-0.5 md:py-1 rounded md:rounded-md border font-black text-[7px] md:text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : otCount < minOt ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-purple-700'}`}><span>OT</span><span>{otCount}</span></div>
+                    <div className={`flex justify-between px-1 md:px-2 py-0.5 md:py-1 rounded md:rounded-md border font-black text-[7px] md:text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : stCount < minSt ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-700'}`}><span>ST</span><span>{stCount}</span></div>
                   </div>
                 </div>
               );
@@ -301,8 +299,30 @@ function CalendarContent() {
         )}
       </section>
 
-      <aside className="w-[28%] h-full flex flex-col bg-white border-l shadow-2xl relative z-20">
-        <header className="h-20 flex-none p-6 border-b flex justify-between items-center bg-gray-900 text-white">
+      {/* Mobile FAB */}
+      <button
+        onClick={() => setShowMobilePanel(p => !p)}
+        className="md:hidden fixed bottom-6 right-6 z-[150] w-14 h-14 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
+      >
+        {showMobilePanel ? <X size={22} /> : <Activity size={22} className="text-blue-400" />}
+        {triageCount > 0 && !showMobilePanel && (
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[9px] font-black flex items-center justify-center">{triageCount}</span>
+        )}
+      </button>
+
+      {/* Mobile backdrop */}
+      {showMobilePanel && (
+        <div className="md:hidden fixed inset-0 bg-black/40 z-[100]" onClick={() => setShowMobilePanel(false)} />
+      )}
+
+      <aside className={`
+        md:static md:w-[28%] md:h-full md:translate-y-0 md:rounded-none md:border-l md:border-t-0
+        fixed inset-x-0 bottom-0 h-[85vh] rounded-t-[2rem] z-[110]
+        flex flex-col bg-white shadow-2xl
+        transform transition-transform duration-300 ease-in-out
+        ${showMobilePanel ? 'translate-y-0' : 'translate-y-full md:translate-y-0'}
+      `}>
+        <header className="h-16 md:h-20 flex-none p-4 md:p-6 border-b flex justify-between items-center bg-gray-900 text-white md:rounded-none rounded-t-[2rem]">
           <h2 className="text-md font-black uppercase tracking-widest flex items-center gap-3">
             <Activity size={22} className="text-blue-400" /> {isScheduler ? 'Triage' : 'My Schedule'}
           </h2>

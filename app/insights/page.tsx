@@ -156,7 +156,7 @@ function InsightsContent() {
   };
 
   return (
-    <main className="h-screen w-full bg-gray-50 text-black font-sans flex flex-col overflow-hidden">
+    <main className="min-h-screen md:h-screen w-full bg-gray-50 text-black font-sans flex flex-col md:overflow-hidden">
       <header className="h-20 bg-white border-b flex items-center justify-between px-10">
         <div className="flex items-center gap-6">
           <Link href="/" className="p-3 bg-gray-50 rounded-2xl border hover:bg-white transition-all active:scale-95 shadow-sm">
@@ -171,10 +171,10 @@ function InsightsContent() {
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden p-6 grid grid-cols-2 grid-rows-2 gap-4">
+      <div className="flex-1 md:overflow-hidden p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 md:grid-rows-2 gap-4">
 
         {/* Holiday Coverage */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-5 md:p-6 flex flex-col md:overflow-hidden">
           <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-red-50 rounded-2xl flex items-center justify-center"><CalendarDays size={18} className="text-red-500" /></div>
             <div>
@@ -212,7 +212,7 @@ function InsightsContent() {
         </div>
 
         {/* Extended Shifts */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-5 md:p-6 flex flex-col md:overflow-hidden">
           <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center"><Flame size={18} className="text-orange-500" /></div>
             <div>
@@ -243,7 +243,7 @@ function InsightsContent() {
         </div>
 
         {/* Top Requesters */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-5 md:p-6 flex flex-col md:overflow-hidden">
           <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-violet-50 rounded-2xl flex items-center justify-center"><MessageSquare size={18} className="text-violet-500" /></div>
             <div>
@@ -277,7 +277,7 @@ function InsightsContent() {
         </div>
 
         {/* PRN Utilization */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-5 md:p-6 flex flex-col md:overflow-hidden">
           <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center"><UserCheck size={18} className="text-emerald-500" /></div>
             <div>

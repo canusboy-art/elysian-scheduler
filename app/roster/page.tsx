@@ -179,7 +179,7 @@ function RosterContent() {
 
   return (
     <main className="h-screen w-full bg-gray-50 flex flex-col overflow-hidden text-black font-sans isolate">
-      <header className="h-24 flex-none border-b flex justify-between items-center px-12 bg-white">
+      <header className="h-auto md:h-24 flex-none border-b flex flex-wrap justify-between items-center px-4 md:px-12 py-3 md:py-0 gap-3 bg-white">
         <div className="flex items-center gap-8">
           <Link href={`/?m=${currentMonth}`} className="p-3 bg-gray-50 rounded-2xl border hover:bg-white transition-all active:scale-95 shadow-sm">
             <ChevronLeft size={20} />
@@ -200,7 +200,7 @@ function RosterContent() {
 
       {view === 'cards' ? (
         <div className="flex-1 overflow-hidden p-5 bg-gray-50/50">
-          <div className="h-full grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr">
+          <div className="h-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-fr overflow-y-auto md:overflow-hidden">
             {roster.map(staff => (
               <div key={staff.id} className="bg-white rounded-[2rem] border border-gray-200 p-6 flex flex-col justify-between shadow-sm transition-all hover:shadow-lg relative overflow-hidden group">
                 <div className="space-y-4">

@@ -434,7 +434,7 @@ function CalendarContent() {
             <div className="flex-1 overflow-hidden flex flex-col">
               {/* Incoming swap requests */}
               {incomingGrouped.length > 0 && (
-                <div style={{ flex: incomingFlex }} className="min-h-0 border-b overflow-y-auto p-4 space-y-2">
+                <div style={{ flexGrow: incomingFlex, flexShrink: 1, flexBasis: 'auto', overflowY: 'auto', minHeight: 0 }} className="border-b p-4 space-y-2">
                   <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Incoming Swaps</p>
                   {incomingGrouped.map(group => {
                     const requester = roster.find(r => r.id === group[0].user_id);
@@ -473,7 +473,7 @@ function CalendarContent() {
 
               {/* My requests */}
               {myOutgoingRequests.length > 0 && (
-                <div style={{ flex: myRequestFlex }} className="min-h-0 border-b overflow-y-auto p-4 space-y-2">
+                <div style={{ flexGrow: myRequestFlex, flexShrink: 1, flexBasis: 'auto', overflowY: 'auto', minHeight: 0 }} className="border-b p-4 space-y-2">
                   <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">My Requests</p>
                   {Object.values(
                     myOutgoingRequests.reduce((acc: any, r: any) => {
@@ -503,7 +503,7 @@ function CalendarContent() {
               )}
 
               {/* Weekends & Holidays */}
-              <div style={{ flex: specialFlex }} className="min-h-0 overflow-y-auto p-4 space-y-1.5">
+              <div style={{ flexGrow: specialFlex, flexShrink: 1, flexBasis: 'auto', overflowY: 'auto', minHeight: 0 }} className="p-4 space-y-1.5">
                 <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Weekends & Holidays</p>
                 {monthShifts.length === 0 ? (
                   <p className="text-[9px] font-black uppercase text-gray-300 tracking-widest">No weekend or holiday shifts this month</p>

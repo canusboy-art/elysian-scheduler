@@ -25,7 +25,8 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
   const [existingRequest, setExistingRequest] = useState<any | null>(null);
 
   useEffect(() => {
-    supabase.from('shifts').select('*').eq('date', dateStr).eq('status', 'vacant')
+    const myDiscipline = myProfile.is_pt ? 'PT' : myProfile.is_ot ? 'OT' : 'ST';
+    supabase.from('shifts').select('*').eq('date', dateStr).eq('status', 'vacant').eq('discipline', myDiscipline)
       .then(({ data }) => setOpenShifts(data || []));
     supabase.from('shift_requests').select('*')
       .eq('user_id', myProfile.id).eq('date', dateStr).in('status', ['pending', 'approved'])

@@ -18,10 +18,11 @@ export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClos
   const [showAddModal, setShowAddModal] = useState<'pt' | 'ot' | 'st' | null>(null);
   const [showSlotModal, setShowSlotModal] = useState(false);
   const [slotNote, setSlotNote] = useState('');
+  const [slotDiscipline, setSlotDiscipline] = useState<'PT' | 'OT' | 'ST'>('PT');
 
   async function handleOpenSlot() {
     setLoading(true);
-    await supabase.from('shifts').insert([{ date: shift.date, status: 'vacant', admin_note: slotNote || null }]);
+    await supabase.from('shifts').insert([{ date: shift.date, status: 'vacant', discipline: slotDiscipline, admin_note: slotNote || null }]);
     setSlotNote('');
     setShowSlotModal(false);
     onUpdate();
@@ -174,6 +175,17 @@ export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClos
               <button onClick={() => setShowSlotModal(false)} className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all"><X size={24} /></button>
             </div>
             <p className="text-[9px] font-black text-gray-300 uppercase tracking-widest mb-4">Staff not scheduled this day will be able to sign up.</p>
+            <div className="mb-4">
+              <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 mb-2">Open to</p>
+              <div className="flex gap-2">
+                {([['PT', 'bg-blue-600'], ['OT', 'bg-purple-600'], ['ST', 'bg-emerald-600']] as const).map(([d, bg]) => (
+                  <button key={d} onClick={() => setSlotDiscipline(d)}
+                    className={`flex-1 py-2.5 rounded-xl font-black text-[10px] uppercase border-2 transition-all ${slotDiscipline === d ? `${bg} text-white border-transparent` : 'text-gray-300 border-gray-100'}`}>
+                    {d}
+                  </button>
+                ))}
+              </div>
+            </div>
             <input
               autoFocus value={slotNote} onChange={e => setSlotNote(e.target.value)}
               placeholder="Note (optional — e.g. 'Morning shift')"

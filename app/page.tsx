@@ -245,46 +245,48 @@ function CalendarContent() {
               const isSelected = multiSelectedDates.includes(dateStr);
               const today = format(new Date(), 'yyyy-MM-dd');
               const isPast = dateStr < today;
+              const myDiscipline = !isScheduler ? (profile?.is_pt ? 'PT' : profile?.is_ot ? 'OT' : 'ST') : null;
+              const hasMyOpenSlot = !isScheduler && !isMeWorking && !isPast &&
+                shifts.some(s => s.date === dateStr && s.status === 'vacant' && s.discipline === myDiscipline);
+
+              // Mobile cell styling — pure color coding
+              const mobileBg = isToday ? '' : isMeWorking ? 'bg-emerald-200' : hasMyOpenSlot ? 'bg-amber-100' : 'bg-white';
+              const mobileBorder = isToday ? '' : isMeWorking ? 'border-emerald-400' : hasMyOpenSlot ? 'border-amber-400' : 'border-gray-100';
+              const mobileDateColor = isToday ? 'text-white' : isMeWorking ? 'text-emerald-800' : hasMyOpenSlot ? 'text-amber-700' : 'text-gray-300';
 
               return (
                 <div key={dateStr} onClick={() => setSelectedDate(dateStr)}
-                  className={`border-2 transition-all cursor-pointer relative rounded-[1rem] md:rounded-[1.2rem] p-1.5 md:p-3 flex flex-col items-center justify-center gap-0.5 md:gap-1
-                    ${isSelected ? 'ring-4 ring-violet-400 border-violet-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' : isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}
-                    ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}
+                  className={`border-2 transition-all cursor-pointer relative flex flex-col items-center justify-center
+                    rounded-[1rem] md:rounded-[1.2rem]
+                    p-1 md:p-3
+                    gap-0.5 md:gap-1
+                    ${isSelected ? 'ring-4 ring-violet-400 border-violet-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' :
+                      `${mobileBorder} md:${isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}`}
+                    ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : `${mobileBg} md:${isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}`}
                     ${!isCurrentMonth ? 'opacity-20 grayscale' : 'opacity-100'}`}
                 >
-                  <span className={`text-[11px] font-black uppercase absolute top-3 left-3 leading-none ${isToday ? 'text-white' : isMeWorking ? 'text-emerald-600' : 'text-gray-300'}`}>
+                  <span className={`text-[10px] md:text-[11px] font-black uppercase absolute top-1.5 md:top-3 left-1.5 md:left-3 leading-none ${isToday ? 'text-white' : `${mobileDateColor} md:${isMeWorking ? 'text-emerald-600' : 'text-gray-300'}`}`}>
                     {format(new Date(dateStr + 'T12:00:00'), 'd')}
                   </span>
+                  {/* Multi-select button — desktop only */}
                   {!isScheduler && isMeWorking && !isToday && !isPast && (
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleDaySelection(dateStr); }}
-                      className={`absolute top-2.5 right-2.5 w-4 h-4 rounded-full border-2 transition-all z-10 ${isSelected ? 'bg-violet-500 border-violet-500' : 'border-emerald-300 bg-white hover:bg-violet-100'}`}
+                      className={`hidden md:block absolute top-2.5 right-2.5 w-4 h-4 rounded-full border-2 transition-all z-10 ${isSelected ? 'bg-violet-500 border-violet-500' : 'border-emerald-300 bg-white hover:bg-violet-100'}`}
                     />
                   )}
-                  {hasOverride && !multiSelectedDates.length && <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
-                  {isCoveringSwap && !isToday && <div className="absolute bottom-2 left-2 text-[8px]">🔄</div>}
-                  {hasPendingRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-orange-400" />}
-                  {hasDeniedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" />}
-                  {hasApprovedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500" />}
-                  {hasOpenSlot && !isToday && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                  {/* Desktop-only indicators */}
+                  {hasOverride && !multiSelectedDates.length && <div className={`hidden md:block absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
+                  {isCoveringSwap && !isToday && <div className="hidden md:block absolute bottom-2 left-2 text-[8px]">🔄</div>}
+                  {hasPendingRequest && !isToday && <div className="hidden md:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                  {hasDeniedRequest && !isToday && <div className="hidden md:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" />}
+                  {hasApprovedRequest && !isToday && <div className="hidden md:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500" />}
+                  {hasOpenSlot && !isToday && <div className="hidden md:block absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                   {/* Desktop: PT/OT/ST badges */}
                   <div className="hidden md:flex flex-col gap-1 w-full max-w-[75px]">
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : otCount < minOt ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-purple-700'}`}><span>OT</span><span>{otCount}</span></div>
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : stCount < minSt ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-700'}`}><span>ST</span><span>{stCount}</span></div>
-                  </div>
-                  {/* Mobile: simple indicators */}
-                  <div className="md:hidden flex items-center justify-center mt-3">
-                    {isScheduler ? (
-                      <div className={`w-2.5 h-2.5 rounded-full ${(ptCount >= minPt && otCount >= minOt && stCount >= minSt) ? 'bg-emerald-400' : 'bg-red-400'}`} />
-                    ) : isMeWorking ? (
-                      <div className={`w-3 h-3 rounded-full ${isToday ? 'bg-white' : 'bg-emerald-500'}`} />
-                    ) : hasOpenSlot && !isPast ? (
-                      <div className="w-3 h-3 rounded-full border-2 border-blue-400 flex items-center justify-center">
-                        <span className="text-blue-500 font-black leading-none" style={{ fontSize: '8px' }}>+</span>
-                      </div>
-                    ) : null}
                   </div>
                 </div>
               );

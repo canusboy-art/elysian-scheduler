@@ -156,7 +156,7 @@ function InsightsContent() {
   };
 
   return (
-    <main className="min-h-screen w-full bg-gray-50 text-black font-sans">
+    <main className="h-screen w-full bg-gray-50 text-black font-sans flex flex-col overflow-hidden">
       <header className="h-20 bg-white border-b flex items-center justify-between px-10">
         <div className="flex items-center gap-6">
           <Link href="/" className="p-3 bg-gray-50 rounded-2xl border hover:bg-white transition-all active:scale-95 shadow-sm">
@@ -171,21 +171,22 @@ function InsightsContent() {
         </div>
       </header>
 
-      <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="flex-1 overflow-hidden p-6 grid grid-cols-2 grid-rows-2 gap-4">
 
         {/* Holiday Coverage */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-8">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+          <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-red-50 rounded-2xl flex items-center justify-center"><CalendarDays size={18} className="text-red-500" /></div>
             <div>
               <h2 className="text-sm font-black uppercase tracking-widest">Holiday Coverage</h2>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{format(referenceDate, 'yyyy')} US Federal Holidays</p>
             </div>
           </div>
+          <div className="flex-1 overflow-y-auto pr-1">
           {holidayCoverage.length === 0 ? (
             <p className="text-[10px] font-black uppercase text-gray-300 tracking-widest">No holidays this month</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {holidayCoverage.map(h => (
                 <div key={h.date} className="space-y-2">
                   <div className="flex justify-between items-center">
@@ -207,23 +208,25 @@ function InsightsContent() {
               ))}
             </div>
           )}
+          </div>
         </div>
 
         {/* Extended Shifts */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-8">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+          <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-orange-50 rounded-2xl flex items-center justify-center"><Flame size={18} className="text-orange-500" /></div>
             <div>
               <h2 className="text-sm font-black uppercase tracking-widest">5+ Consecutive Days</h2>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Staff working extended runs</p>
             </div>
           </div>
+          <div className="flex-1 overflow-y-auto pr-1">
           {extendedShifts.length === 0 ? (
             <p className="text-[10px] font-black uppercase text-gray-300 tracking-widest">No extended runs this month</p>
           ) : (
             <div className="space-y-3">
               {extendedShifts.map(s => (
-                <div key={s.id} className="flex items-center justify-between p-4 bg-orange-50 border border-orange-100 rounded-2xl">
+                <div key={s.id} className="flex items-center justify-between p-3 bg-orange-50 border border-orange-100 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-gray-900 rounded-xl flex items-center justify-center text-white font-black text-xs">{s.full_name?.[0]}</div>
                     <div>
@@ -231,30 +234,30 @@ function InsightsContent() {
                       <p className="text-[9px] font-black text-gray-400 uppercase">{s.is_pt ? 'PT' : s.is_ot ? 'OT' : 'ST'}</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-orange-600 bg-white border border-orange-200 px-3 py-1.5 rounded-xl">
-                    {s.maxRun} days
-                  </span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-orange-600 bg-white border border-orange-200 px-3 py-1.5 rounded-xl">{s.maxRun} days</span>
                 </div>
               ))}
             </div>
           )}
+          </div>
         </div>
 
         {/* Top Requesters */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-8">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+          <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-violet-50 rounded-2xl flex items-center justify-center"><MessageSquare size={18} className="text-violet-500" /></div>
             <div>
               <h2 className="text-sm font-black uppercase tracking-widest">Top Requesters</h2>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Swaps + time off this month</p>
             </div>
           </div>
+          <div className="flex-1 overflow-y-auto pr-1">
           {topRequesters.length === 0 ? (
             <p className="text-[10px] font-black uppercase text-gray-300 tracking-widest">No requests this month</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {topRequesters.map((s, i) => (
-                <div key={s.id} className="flex items-center justify-between p-4 bg-gray-50 border border-gray-100 rounded-2xl">
+                <div key={s.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100 rounded-2xl">
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] font-black text-gray-300 w-4">#{i + 1}</span>
                     <div>
@@ -270,25 +273,27 @@ function InsightsContent() {
               ))}
             </div>
           )}
+          </div>
         </div>
 
         {/* PRN Utilization */}
-        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-8">
-          <div className="flex items-center gap-3 mb-6">
+        <div className="bg-white rounded-[2rem] border border-gray-200 shadow-sm p-6 flex flex-col overflow-hidden">
+          <div className="flex items-center gap-3 mb-4 flex-none">
             <div className="w-10 h-10 bg-emerald-50 rounded-2xl flex items-center justify-center"><UserCheck size={18} className="text-emerald-500" /></div>
             <div>
               <h2 className="text-sm font-black uppercase tracking-widest">PRN Utilization</h2>
               <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Min {settings.min_prn_days} days/month — set in roster</p>
             </div>
           </div>
+          <div className="flex-1 overflow-y-auto pr-1">
           {prnStaff.length === 0 ? (
             <p className="text-[10px] font-black uppercase text-gray-300 tracking-widest">No PRN staff on roster</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {prnUtilization.map(s => {
                 const met = s.daysWorked >= settings.min_prn_days;
                 return (
-                  <div key={s.id} className={`flex items-center justify-between p-4 border rounded-2xl ${met ? 'bg-gray-50 border-gray-100' : 'bg-red-50 border-red-100'}`}>
+                  <div key={s.id} className={`flex items-center justify-between p-3 border rounded-2xl ${met ? 'bg-gray-50 border-gray-100' : 'bg-red-50 border-red-100'}`}>
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-white font-black text-xs ${s.is_pt ? 'bg-blue-600' : s.is_ot ? 'bg-purple-600' : 'bg-emerald-600'}`}>{s.full_name?.[0]}</div>
                       <div>
@@ -297,9 +302,7 @@ function InsightsContent() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`text-[10px] font-black uppercase tracking-widest ${met ? 'text-emerald-600' : 'text-red-500'}`}>
-                        {s.daysWorked}/{settings.min_prn_days} days
-                      </p>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${met ? 'text-emerald-600' : 'text-red-500'}`}>{s.daysWorked}/{settings.min_prn_days} days</p>
                       {!met && <p className="text-[9px] font-black text-red-400 uppercase">{settings.min_prn_days - s.daysWorked} short</p>}
                     </div>
                   </div>
@@ -307,6 +310,7 @@ function InsightsContent() {
               })}
             </div>
           )}
+          </div>
         </div>
 
       </div>

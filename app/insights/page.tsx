@@ -111,7 +111,7 @@ function InsightsContent() {
   }).map(d => format(d, 'yyyy-MM-dd'));
 
   const year = referenceDate.getFullYear();
-  const holidays = getUSHolidays(year).filter(h => h.date.startsWith(format(referenceDate, 'yyyy-MM')));
+  const holidays = getUSHolidays(year);
 
   // 1. Holiday coverage
   const holidayCoverage = holidays.map(h => ({
@@ -179,7 +179,7 @@ function InsightsContent() {
             <div className="w-10 h-10 bg-red-50 rounded-2xl flex items-center justify-center"><CalendarDays size={18} className="text-red-500" /></div>
             <div>
               <h2 className="text-sm font-black uppercase tracking-widest">Holiday Coverage</h2>
-              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{format(referenceDate, 'MMMM yyyy')}</p>
+              <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{format(referenceDate, 'yyyy')} US Federal Holidays</p>
             </div>
           </div>
           {holidayCoverage.length === 0 ? (
@@ -198,7 +198,7 @@ function InsightsContent() {
                     <div className="flex flex-wrap gap-1.5">
                       {h.staff.map(s => (
                         <span key={s.id} className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide ${s.is_pt ? 'bg-blue-50 text-blue-700' : s.is_ot ? 'bg-purple-50 text-purple-700' : 'bg-emerald-50 text-emerald-700'}`}>
-                          {s.full_name}
+                          {s.full_name} · {s.is_pt ? 'PT' : s.is_ot ? 'OT' : 'ST'}
                         </span>
                       ))}
                     </div>

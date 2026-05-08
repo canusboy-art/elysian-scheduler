@@ -34,6 +34,7 @@ function CalendarContent() {
   const [deniedSwaps, setDeniedSwaps] = useState<any[]>([]);
   const [acceptedSwaps, setAcceptedSwaps] = useState<any[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<any[]>([]);
+  const [myOutgoingRequests, setMyOutgoingRequests] = useState<any[]>([]);
   const [showSwapPopup, setShowSwapPopup] = useState(false);
   const [multiSelectedDates, setMultiSelectedDates] = useState<string[]>([]);
   const [showMultiSwapModal, setShowMultiSwapModal] = useState(false);
@@ -59,17 +60,19 @@ function CalendarContent() {
 
   const fetchUserData = useCallback(async () => {
     if (!profile) return;
-    const [{ data: swapData }, { data: deniedData }, { data: acceptedData }, { data: timeOffData }] = await Promise.all([
+    const [{ data: swapData }, { data: deniedData }, { data: acceptedData }, { data: timeOffData }, { data: outgoingData }] = await Promise.all([
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'pending'),
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'denied'),
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'approved'),
       isScheduler ? supabase.from('shift_requests').select('*').eq('type', 'petition_off').eq('status', 'pending') : Promise.resolve({ data: [] }),
+      !isScheduler ? supabase.from('shift_requests').select('*').eq('user_id', profile.id).eq('status', 'pending') : Promise.resolve({ data: [] }),
     ]);
     setPendingSwaps(swapData || []);
     setDeniedSwaps(deniedData || []);
     setAcceptedSwaps(acceptedData || []);
     if (swapData && swapData.length > 0) setShowSwapPopup(true);
     setTimeOffRequests(timeOffData || []);
+    setMyOutgoingRequests(outgoingData || []);
   }, [profile, isScheduler]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
@@ -213,6 +216,7 @@ function CalendarContent() {
               const stCount = scheduledStaff.filter(s => s.is_st).length;
               const isMeWorking = profile && scheduledStaff.some(s => s.id === profile.id);
               const isCoveringSwap = isMeWorking && acceptedSwaps.some(s => s.date === dateStr);
+              const hasPendingRequest = myOutgoingRequests.some(r => r.date === dateStr);
               const isSelected = multiSelectedDates.includes(dateStr);
               const today = format(new Date(), 'yyyy-MM-dd');
               const isPast = dateStr < today;
@@ -235,6 +239,7 @@ function CalendarContent() {
                   )}
                   {hasOverride && !multiSelectedDates.length && <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
                   {isCoveringSwap && !isToday && <div className="absolute bottom-2 left-2 text-[8px]">🔄</div>}
+                  {hasPendingRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-orange-400" />}
                   {hasOpenSlot && !isToday && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                   <div className="flex flex-col gap-1 w-full max-w-[75px]">
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
@@ -397,6 +402,42 @@ function CalendarContent() {
                 </>
               );
             })()}
+
+            {myOutgoingRequests.length > 0 && (
+              <>
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2 pt-1">My Pending Requests</p>
+                {Object.values(
+                  myOutgoingRequests.reduce((acc: any, r: any) => {
+                    const key = `${r.type}-${r.target_user_id || 'none'}`;
+                    if (!acc[key]) acc[key] = [];
+                    acc[key].push(r);
+                    return acc;
+                  }, {})
+                ).map((group: any) => {
+                  const isSwap = group[0].type === 'swap';
+                  const target = isSwap ? roster.find(r => r.id === group[0].target_user_id) : null;
+                  const sorted = [...group].sort((a: any, b: any) => a.date.localeCompare(b.date));
+                  return (
+                    <div key={group[0].type + group[0].target_user_id} className={`p-4 rounded-2xl border space-y-2 ${isSwap ? 'bg-blue-50 border-blue-100' : 'bg-orange-50 border-orange-100'}`}>
+                      <div className="flex justify-between items-center">
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${isSwap ? 'text-blue-700' : 'text-orange-700'}`}>
+                          {isSwap ? `Swap → ${target?.full_name || 'Unknown'}` : 'Time Off Request'}
+                        </p>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Pending</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {sorted.map((r: any) => (
+                          <span key={r.id} className={`px-2 py-1 bg-white border rounded-lg text-[9px] font-black uppercase ${isSwap ? 'border-blue-200 text-blue-700' : 'border-orange-200 text-orange-700'}`}>
+                            {format(parseISO(r.date), 'MMM d')}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+                <div className="pt-1 border-t border-gray-100" />
+              </>
+            )}
 
             <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2">Upcoming Shifts</p>
             {getDisplayDays()

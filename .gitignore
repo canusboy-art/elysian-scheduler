@@ -23,6 +23,9 @@
 # misc
 .DS_Store
 *.pem
+.aider.chat.history.md
+.aider.input.history
+.vscode/
 
 # debug
 npm-debug.log*

@@ -185,6 +185,7 @@ function RosterContent() {
             <ChevronLeft size={20} />
           </Link>
           <h1 className="text-3xl font-black uppercase tracking-tighter">Master Roster</h1>
+          <Link href={`/insights?m=${currentMonth?.slice(0, 7) || new Date().toISOString().slice(0, 7)}`} className="text-[10px] font-black uppercase text-gray-400 hover:text-blue-600 transition-all border-l-2 pl-6 ml-2">Insights</Link>
           <div className="flex items-center bg-gray-100 rounded-2xl p-1 gap-1 ml-4">
             <button onClick={() => setView('cards')} className={`px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${view === 'cards' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>Staff Cards</button>
             <button onClick={() => setView('schedule')} className={`px-5 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${view === 'schedule' ? 'bg-white shadow text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}>Weekly Schedule</button>

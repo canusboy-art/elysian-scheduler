@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Activity, RefreshCcw, ArrowRightLeft, UserPlus, CalendarPlus, UserMinus } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -19,10 +19,30 @@ export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClos
   const [showSlotModal, setShowSlotModal] = useState(false);
   const [slotNote, setSlotNote] = useState('');
   const [slotDiscipline, setSlotDiscipline] = useState<'PT' | 'OT' | 'ST'>('PT');
+  const [daySlots, setDaySlots] = useState<any[]>([]);
+  const [slotAssignments, setSlotAssignments] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchSlots = async () => {
+      const { data: sData } = await supabase.from('shifts').select('*')
+        .eq('date', shift.date).in('status', ['vacant', 'filled']);
+      const slots = sData || [];
+      setDaySlots(slots);
+      if (slots.length > 0) {
+        const { data: aData } = await supabase.from('shift_assignments').select('*')
+          .in('shift_id', slots.map((s: any) => s.id));
+        setSlotAssignments(aData || []);
+      } else {
+        setSlotAssignments([]);
+      }
+    };
+    fetchSlots();
+  }, [shift.date]);
 
   async function handleOpenSlot() {
     setLoading(true);
-    await supabase.from('shifts').insert([{ date: shift.date, status: 'vacant', discipline: slotDiscipline, admin_note: slotNote || null }]);
+    const { data: newSlot } = await supabase.from('shifts').insert([{ date: shift.date, status: 'vacant', discipline: slotDiscipline, admin_note: slotNote || null }]).select().single();
+    if (newSlot) setDaySlots(prev => [...prev, newSlot]);
     setSlotNote('');
     setShowSlotModal(false);
     onUpdate();
@@ -136,6 +156,24 @@ export default function DayDetailPanel({ shift, scheduledStaff, allStaff, onClos
                 </button>
               </h3>
               <div className="grid grid-cols-1 gap-3">
+                {daySlots.filter(s => s.discipline === group.discipline.toUpperCase()).map(slot => {
+                  const assignment = slotAssignments.find(a => a.shift_id === slot.id);
+                  const filledBy = assignment ? allStaff.find(s => s.id === assignment.user_id) : null;
+                  return (
+                    <div key={slot.id} className={`flex items-center justify-between p-5 rounded-[1.5rem] border ${filledBy ? 'bg-gray-50 border-gray-100' : 'bg-amber-50 border-amber-200 border-dashed'}`}>
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 ${filledBy ? group.bg : 'bg-amber-200'} rounded-xl flex items-center justify-center text-white font-black text-[10px]`}>
+                          {filledBy ? group.icon : '?'}
+                        </div>
+                        <div>
+                          <p className="font-black text-sm uppercase tracking-tight">{filledBy ? filledBy.full_name : 'Open Slot'}</p>
+                          {slot.admin_note && <p className="text-[9px] text-gray-400 font-medium">{slot.admin_note}</p>}
+                        </div>
+                      </div>
+                      {!filledBy && <span className="text-[9px] font-black uppercase tracking-widest text-amber-500">Unfilled</span>}
+                    </div>
+                  );
+                })}
                 {group.list.map(staff => (
                   <div key={staff.id} className="flex items-center justify-between p-5 bg-gray-50 rounded-[1.5rem] border border-gray-100 group transition-all hover:bg-white hover:shadow-md">
                     <div className="flex items-center gap-4">

@@ -190,20 +190,20 @@ function CalendarContent() {
 
   return (
     <main className="flex h-screen w-full bg-white overflow-hidden text-black font-sans isolate">
-      <section className="w-full md:w-[72%] h-full flex flex-col border-r border-gray-100">
-        {/* Mobile header — month nav only */}
-        <header className="md:hidden landscape:h-9 h-12 flex-none border-b flex items-center justify-between px-3 bg-white">
+      <section className="w-full lg:w-[72%] h-full flex flex-col border-r border-gray-100">
+        {/* Mobile header — month nav only (portrait + landscape phones) */}
+        <header className="lg:hidden h-12 flex-none border-b flex items-center justify-between px-3 bg-white">
           <button onClick={signOut} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><LogOut size={15} /></button>
           <div className="flex items-center bg-gray-50 rounded-xl p-0.5 border gap-0.5">
             <button onClick={() => navigateMonth('prev')} className="p-1.5 hover:bg-white rounded-lg transition-all"><ChevronLeft size={15} /></button>
-            <span className="text-[10px] landscape:text-[9px] font-black uppercase tracking-wide px-2 min-w-[80px] text-center">{format(referenceDate, 'MMMM yyyy')}</span>
+            <span className="text-[10px] font-black uppercase tracking-wide px-2 min-w-[80px] text-center">{format(referenceDate, 'MMMM yyyy')}</span>
             <button onClick={() => navigateMonth('next')} className="p-1.5 hover:bg-white rounded-lg transition-all"><ChevronRight size={15} /></button>
           </div>
           <button onClick={() => navigateMonth('today')} className="p-1.5 text-blue-500"><Target size={15} /></button>
         </header>
 
         {/* Desktop header */}
-        <header className="hidden md:flex h-20 flex-none border-b justify-between items-center px-10 bg-white">
+        <header className="hidden lg:flex h-20 flex-none border-b justify-between items-center px-10 bg-white">
           <div className="flex items-center gap-10">
             <h1 className="text-2xl font-black italic tracking-tighter border-l-8 border-blue-600 pl-4 uppercase">Elysian Scheduler</h1>
             {isScheduler && (
@@ -230,13 +230,13 @@ function CalendarContent() {
           </div>
         </header>
 
-        <div className="flex-1 p-2 landscape:p-1 md:p-4 bg-gray-50/20 overflow-hidden flex flex-col">
-          <div className="grid grid-cols-7 h-6 landscape:h-5 md:h-8 mb-1 landscape:mb-0.5 md:mb-2 flex-none">
+        <div className="flex-1 p-2 lg:p-4 bg-gray-50/20 overflow-hidden flex flex-col">
+          <div className="grid grid-cols-7 h-6 lg:h-8 mb-1 lg:mb-2 flex-none">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} className="text-center text-[8px] landscape:text-[7px] md:text-[10px] font-black text-gray-400 uppercase tracking-tight md:tracking-[0.3em]">{day[0]}<span className="hidden md:inline">{day.slice(1)}</span></div>
+              <div key={day} className="text-center text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-tight lg:tracking-[0.3em]">{day[0]}<span className="hidden lg:inline">{day.slice(1)}</span></div>
             ))}
           </div>
-          <div className="flex-1 grid grid-cols-7 grid-rows-6 gap-0.5 landscape:gap-0.5 md:gap-2 h-full">
+          <div className="flex-1 grid grid-cols-7 grid-rows-6 gap-0.5 lg:gap-2 h-full">
             {getDisplayDays().map((dateStr) => {
               const scheduledStaff = getStaffForDate(dateStr);
               const isToday = isSameDay(new Date(dateStr + 'T12:00:00'), new Date());
@@ -272,33 +272,33 @@ function CalendarContent() {
               return (
                 <div key={dateStr} onClick={() => setSelectedDate(dateStr)}
                   className={`border transition-all cursor-pointer relative flex flex-col items-center justify-center
-                    rounded-lg landscape:rounded-md md:rounded-[1.2rem]
-                    p-0.5 landscape:p-0 md:p-3
-                    gap-0 md:gap-1
+                    rounded-lg lg:rounded-[1.2rem]
+                    p-0.5 lg:p-3
+                    gap-0 lg:gap-1
                     ${isSelected ? 'ring-4 ring-violet-400 border-violet-500 shadow-lg z-10' : dateStr === selectedDate ? 'ring-4 ring-blue-500/10 border-blue-600 shadow-xl z-10' :
-                      `${mobileBorder} md:${isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}`}
-                    ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : `${mobileBg} md:${isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}`}
+                      `${mobileBorder} lg:${isMeWorking && !isToday ? 'border-emerald-400' : 'border-gray-50 hover:border-blue-200'}`}
+                    ${isToday ? 'bg-blue-600/70 border-blue-400 shadow-lg shadow-blue-200' : `${mobileBg} lg:${isMeWorking ? 'bg-emerald-50/60' : 'bg-white'}`}
                     ${!isCurrentMonth ? 'opacity-20 grayscale' : 'opacity-100'}`}
                 >
-                  <span className={`text-[9px] landscape:text-[8px] md:text-[11px] font-black uppercase absolute top-1 landscape:top-0.5 md:top-3 left-1 landscape:left-0.5 md:left-3 leading-none ${isToday ? 'text-white' : `${mobileDateColor} md:${isMeWorking ? 'text-emerald-600' : 'text-gray-300'}`}`}>
+                  <span className={`text-[9px] lg:text-[11px] font-black uppercase absolute top-1 lg:top-3 left-1 lg:left-3 leading-none ${isToday ? 'text-white' : `${mobileDateColor} lg:${isMeWorking ? 'text-emerald-600' : 'text-gray-300'}`}`}>
                     {format(new Date(dateStr + 'T12:00:00'), 'd')}
                   </span>
                   {/* Multi-select button — desktop only */}
                   {!isScheduler && isMeWorking && !isToday && !isPast && (
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleDaySelection(dateStr); }}
-                      className={`hidden md:block absolute top-2.5 right-2.5 w-4 h-4 rounded-full border-2 transition-all z-10 ${isSelected ? 'bg-violet-500 border-violet-500' : 'border-emerald-300 bg-white hover:bg-violet-100'}`}
+                      className={`hidden lg:block absolute top-2.5 right-2.5 w-4 h-4 rounded-full border-2 transition-all z-10 ${isSelected ? 'bg-violet-500 border-violet-500' : 'border-emerald-300 bg-white hover:bg-violet-100'}`}
                     />
                   )}
                   {/* Desktop-only indicators */}
-                  {hasOverride && !multiSelectedDates.length && <div className={`hidden md:block absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
-                  {isCoveringSwap && !isToday && <div className="hidden md:block absolute bottom-2 left-2 text-[8px]">🔄</div>}
-                  {hasPendingRequest && !isToday && <div className="hidden md:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-orange-400" />}
-                  {hasDeniedRequest && !isToday && <div className="hidden md:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" />}
-                  {hasApprovedRequest && !isToday && <div className="hidden md:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500" />}
-                  {hasOpenSlot && !isToday && <div className="hidden md:block absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                  {hasOverride && !multiSelectedDates.length && <div className={`hidden lg:block absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
+                  {isCoveringSwap && !isToday && <div className="hidden lg:block absolute bottom-2 left-2 text-[8px]">🔄</div>}
+                  {hasPendingRequest && !isToday && <div className="hidden lg:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                  {hasDeniedRequest && !isToday && <div className="hidden lg:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" />}
+                  {hasApprovedRequest && !isToday && <div className="hidden lg:block absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500" />}
+                  {hasOpenSlot && !isToday && <div className="hidden lg:block absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                   {/* Desktop: PT/OT/ST badges */}
-                  <div className="hidden md:flex flex-col gap-1 w-full max-w-[75px]">
+                  <div className="hidden lg:flex flex-col gap-1 w-full max-w-[75px]">
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : otCount < minOt ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-purple-700'}`}><span>OT</span><span>{otCount}</span></div>
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : stCount < minSt ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-700'}`}><span>ST</span><span>{stCount}</span></div>
@@ -333,7 +333,7 @@ function CalendarContent() {
       {(triageCount > 0 || pendingSwaps.length > 0 || myOutgoingRequests.length > 0 || showMobilePanel) && (
         <button
           onClick={() => setShowMobilePanel(p => !p)}
-          className="md:hidden fixed bottom-4 landscape:bottom-2 right-4 landscape:right-3 z-[150] w-12 h-12 landscape:w-10 landscape:h-10 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
+          className="lg:hidden fixed bottom-5 right-5 z-[150] w-12 h-12 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
         >
           {showMobilePanel ? <X size={20} /> : <Activity size={20} className="text-blue-400" />}
           {(triageCount + pendingSwaps.length) > 0 && !showMobilePanel && (
@@ -344,17 +344,17 @@ function CalendarContent() {
 
       {/* Mobile backdrop */}
       {showMobilePanel && (
-        <div className="md:hidden fixed inset-0 bg-black/40 z-[100]" onClick={() => setShowMobilePanel(false)} />
+        <div className="lg:hidden fixed inset-0 bg-black/40 z-[100]" onClick={() => setShowMobilePanel(false)} />
       )}
 
       <aside className={`
-        md:static md:w-[28%] md:h-full md:translate-y-0 md:rounded-none md:border-l md:border-t-0
+        lg:static lg:w-[28%] lg:h-full lg:translate-y-0 lg:rounded-none lg:border-l lg:border-t-0
         fixed inset-x-0 bottom-0 h-[85vh] rounded-t-[2rem] z-[110]
         flex flex-col bg-white shadow-2xl
         transform transition-transform duration-300 ease-in-out
-        ${showMobilePanel ? 'translate-y-0' : 'translate-y-full md:translate-y-0'}
+        ${showMobilePanel ? 'translate-y-0' : 'translate-y-full lg:translate-y-0'}
       `}>
-        <header className="h-14 landscape:h-10 md:h-20 flex-none px-4 md:p-6 border-b flex justify-between items-center bg-gray-900 text-white md:rounded-none rounded-t-[2rem]">
+        <header className="h-14 lg:h-20 flex-none px-4 lg:p-6 border-b flex justify-between items-center bg-gray-900 text-white lg:rounded-none rounded-t-[2rem]">
           <h2 className="text-md font-black uppercase tracking-widest flex items-center gap-3">
             <Activity size={22} className="text-blue-400" /> {isScheduler ? 'Triage' : 'My Schedule'}
           </h2>

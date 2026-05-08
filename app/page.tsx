@@ -378,16 +378,16 @@ function CalendarContent() {
 
               if (grouped.length === 0) return null;
 
-              const acceptGroup = async (group: any[]) => {
-                await supabase.from('day_assignments').insert(
-                  group.map(swap => ({ date: swap.date, staff_id: profile!.id, replaced_staff_id: swap.user_id }))
-                );
-                await supabase.from('shift_requests').update({ status: 'approved' }).in('id', group.map(s => s.id));
-                await handleUpdate();
-              };
-
-              const declineGroup = async (group: any[]) => {
-                await supabase.from('shift_requests').update({ status: 'denied' }).in('id', group.map(s => s.id));
+              const decidePanelDay = async (swap: any, action: 'accept' | 'decline') => {
+                setConfirmAction(null);
+                if (action === 'accept') {
+                  await supabase.from('day_assignments').insert([{
+                    date: swap.date, staff_id: profile!.id, replaced_staff_id: swap.user_id,
+                  }]);
+                }
+                await supabase.from('shift_requests').update({
+                  status: action === 'accept' ? 'approved' : 'denied',
+                }).eq('id', swap.id);
                 await handleUpdate();
               };
 
@@ -396,39 +396,40 @@ function CalendarContent() {
                   <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2">Incoming Swap Requests</p>
                   {grouped.map(group => {
                     const requester = roster.find(r => r.id === group[0].user_id);
-                    const isDenied = group.every(s => s.status === 'denied');
-                    const sorted = [...group].sort((a, b) => a.date.localeCompare(b.date));
+                    const sorted = [...group].sort((a: any, b: any) => a.date.localeCompare(b.date));
                     return (
-                      <div key={group[0].user_id} className={`p-4 rounded-2xl border space-y-2 ${isDenied ? 'bg-gray-50 border-gray-100' : 'bg-blue-50 border-blue-100'}`}>
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-700">{requester?.full_name}</p>
-                            {isDenied && <p className="text-[9px] font-black uppercase text-gray-400">Declined — change mind?</p>}
-                          </div>
-                          {confirmAction?.id === group[0].user_id ? (
-                            (() => { const ca = confirmAction!; return (
-                              <div className="flex gap-1">
-                                <button onClick={() => setConfirmAction(null)} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400">No</button>
-                                <button
-                                  onClick={() => { setConfirmAction(null); ca.action === 'accept' ? acceptGroup(group) : declineGroup(group); }}
-                                  className={`px-2.5 py-1.5 rounded-xl font-black text-[9px] uppercase text-white ${ca.action === 'accept' ? 'bg-blue-600' : 'bg-red-500'}`}
-                                >Yes</button>
+                      <div key={group[0].user_id} className="p-4 rounded-2xl border border-blue-100 bg-blue-50 space-y-2">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-blue-700">{requester?.full_name}</p>
+                        {group[0].reason && <p className="text-[9px] text-gray-500 italic">"{group[0].reason}"</p>}
+                        <div className="space-y-1.5 pt-1">
+                          {sorted.map((swap: any) => {
+                            const isConfirming = confirmAction?.id === swap.id;
+                            const statusColor = swap.status === 'approved' ? 'text-green-600' : swap.status === 'denied' ? 'text-red-500' : '';
+                            return (
+                              <div key={swap.id} className={`flex items-center justify-between p-2.5 rounded-xl border ${swap.status === 'approved' ? 'bg-green-50 border-green-200' : swap.status === 'denied' ? 'bg-red-50 border-red-100' : 'bg-white border-gray-100'}`}>
+                                <span className="text-[10px] font-black uppercase text-gray-700">{format(parseISO(swap.date), 'EEE, MMM d')}</span>
+                                {swap.status !== 'pending' ? (
+                                  <span className={`text-[9px] font-black uppercase ${statusColor}`}>
+                                    {swap.status === 'approved' ? '✓ Accepted' : '✕ Declined'}
+                                  </span>
+                                ) : isConfirming ? (
+                                  (() => { const ca = confirmAction!; return (
+                                    <div className="flex gap-1 items-center">
+                                      <span className="text-[9px] font-black text-gray-400 uppercase">Sure?</span>
+                                      <button onClick={() => setConfirmAction(null)} className="px-2 py-1 bg-white border border-gray-200 rounded-lg font-black text-[9px] uppercase text-gray-400">No</button>
+                                      <button onClick={() => decidePanelDay(swap, ca.action as 'accept' | 'decline')}
+                                        className={`px-2 py-1 rounded-lg font-black text-[9px] uppercase text-white ${ca.action === 'accept' ? 'bg-blue-600' : 'bg-red-500'}`}>Yes</button>
+                                    </div>
+                                  ); })()
+                                ) : (
+                                  <div className="flex gap-1">
+                                    <button onClick={() => setConfirmAction({ id: swap.id, action: 'decline' })} className="px-2 py-1 bg-white border border-gray-100 rounded-lg font-black text-[9px] uppercase text-gray-400 hover:text-red-500 transition-all">✕</button>
+                                    <button onClick={() => setConfirmAction({ id: swap.id, action: 'accept' })} className="px-2 py-1 bg-blue-600 text-white rounded-lg font-black text-[9px] uppercase">✓</button>
+                                  </div>
+                                )}
                               </div>
-                            ); })()
-                          ) : isDenied
-                            ? <button onClick={() => setConfirmAction({ id: group[0].user_id, action: 'accept' })} className="px-3 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">Accept</button>
-                            : <div className="flex gap-1">
-                                <button onClick={() => setConfirmAction({ id: group[0].user_id, action: 'decline' })} className="px-2.5 py-1.5 bg-white border border-gray-200 rounded-xl font-black text-[9px] uppercase text-gray-400 hover:text-red-500 transition-all">✕</button>
-                                <button onClick={() => setConfirmAction({ id: group[0].user_id, action: 'accept' })} className="px-2.5 py-1.5 bg-blue-600 text-white rounded-xl font-black text-[9px] uppercase">✓</button>
-                              </div>
-                          }
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          {sorted.map(s => (
-                            <span key={s.id} className="px-2 py-1 bg-white border border-blue-200 rounded-lg text-[9px] font-black uppercase text-blue-700">
-                              {format(parseISO(s.date), 'MMM d')}
-                            </span>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     );

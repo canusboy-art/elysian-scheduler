@@ -29,6 +29,7 @@ function CalendarContent() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [pendingSwaps, setPendingSwaps] = useState<any[]>([]);
+  const [acceptedSwaps, setAcceptedSwaps] = useState<any[]>([]);
   const [timeOffRequests, setTimeOffRequests] = useState<any[]>([]);
   const [showSwapPopup, setShowSwapPopup] = useState(false);
 
@@ -52,11 +53,13 @@ function CalendarContent() {
 
   const fetchUserData = useCallback(async () => {
     if (!profile) return;
-    const [{ data: swapData }, { data: timeOffData }] = await Promise.all([
+    const [{ data: swapData }, { data: acceptedData }, { data: timeOffData }] = await Promise.all([
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'pending'),
+      supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'approved'),
       isScheduler ? supabase.from('shift_requests').select('*').eq('type', 'petition_off').eq('status', 'pending') : Promise.resolve({ data: [] }),
     ]);
     setPendingSwaps(swapData || []);
+    setAcceptedSwaps(acceptedData || []);
     if (swapData && swapData.length > 0) setShowSwapPopup(true);
     setTimeOffRequests(timeOffData || []);
   }, [profile, isScheduler]);
@@ -185,6 +188,7 @@ function CalendarContent() {
               const otCount = scheduledStaff.filter(s => s.is_ot).length;
               const stCount = scheduledStaff.filter(s => s.is_st).length;
               const isMeWorking = profile && scheduledStaff.some(s => s.id === profile.id);
+              const isCoveringSwap = isMeWorking && acceptedSwaps.some(s => s.date === dateStr);
 
               return (
                 <div key={dateStr} onClick={() => setSelectedDate(dateStr)}
@@ -197,6 +201,7 @@ function CalendarContent() {
                     {format(new Date(dateStr + 'T12:00:00'), 'd')}
                   </span>
                   {hasOverride && <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
+                  {isCoveringSwap && !isToday && <div className="absolute bottom-2 left-2 text-[8px]">🔄</div>}
                   {hasOpenSlot && !isToday && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                   <div className="flex flex-col gap-1 w-full max-w-[75px]">
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
@@ -313,6 +318,7 @@ function CalendarContent() {
           myProfile={profile}
           scheduledStaff={getStaffForDate(selectedDate)}
           allStaff={roster || []}
+          acceptedSwaps={acceptedSwaps}
           onClose={() => setSelectedDate(null)}
           onUpdate={handleUpdate}
         />

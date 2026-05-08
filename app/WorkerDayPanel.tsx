@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { X, ArrowLeftRight, UserMinus, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
-import { format } from 'date-fns';
+import { format, parseISO, isBefore, startOfDay } from 'date-fns';
 
 interface Props {
   dateStr: string;
@@ -11,11 +11,12 @@ interface Props {
   myProfile: any;
   scheduledStaff: any[];
   allStaff: any[];
+  acceptedSwaps: any[];
   onClose: () => void;
   onUpdate: () => void;
 }
 
-export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, scheduledStaff, allStaff, onClose, onUpdate }: Props) {
+export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, scheduledStaff, allStaff, acceptedSwaps, onClose, onUpdate }: Props) {
   const [view, setView] = useState<'main' | 'timeoff' | 'swap'>('main');
   const [reason, setReason] = useState('');
   const [selectedPerson, setSelectedPerson] = useState<any | null>(null);
@@ -30,6 +31,10 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
       .eq('user_id', myProfile.id).eq('date', dateStr).in('status', ['pending', 'approved'])
       .then(({ data }) => setExistingRequest(data?.[0] || null));
   }, [dateStr, myProfile.id]);
+
+  const isPast = isBefore(parseISO(dateStr), startOfDay(new Date()));
+  const coveringFor = acceptedSwaps.find(s => s.date === dateStr);
+  const coveringPerson = coveringFor ? allStaff.find(s => s.id === coveringFor.user_id) : null;
 
   const eligibleSwaps = allStaff.filter(s => {
     const alreadyWorking = scheduledStaff.some(ss => ss.id === s.id);
@@ -99,24 +104,35 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
               <>
                 <div className="p-5 bg-emerald-50 border border-emerald-100 rounded-[1.5rem]">
                   <p className="text-xs font-black uppercase tracking-widest text-emerald-700">You are scheduled this day</p>
+                  {coveringPerson && (
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mt-1">
+                      Covering for {coveringPerson.full_name}
+                    </p>
+                  )}
                 </div>
                 {!existingRequest && (
-                  <>
-                    <button onClick={() => setView('swap')} className="w-full p-6 bg-white border-2 border-gray-100 hover:border-blue-200 hover:bg-blue-50 rounded-[2rem] font-black uppercase text-sm flex items-center gap-4 transition-all group">
-                      <ArrowLeftRight size={20} className="text-blue-400" />
-                      <div className="text-left">
-                        <p className="group-hover:text-blue-600 transition-colors">Request Swap</p>
-                        <p className="text-[9px] text-gray-400 font-medium normal-case">Ask someone to cover your shift</p>
-                      </div>
-                    </button>
-                    <button onClick={() => setView('timeoff')} className="w-full p-6 bg-white border-2 border-gray-100 hover:border-red-200 hover:bg-red-50 rounded-[2rem] font-black uppercase text-sm flex items-center gap-4 transition-all group">
-                      <UserMinus size={20} className="text-red-400" />
-                      <div className="text-left">
-                        <p className="group-hover:text-red-600 transition-colors">Request Time Off</p>
-                        <p className="text-[9px] text-gray-400 font-medium normal-case">Send to your scheduler for approval</p>
-                      </div>
-                    </button>
-                  </>
+                  isPast ? (
+                    <div className="p-5 bg-gray-50 border border-gray-100 rounded-[1.5rem]">
+                      <p className="text-xs font-black uppercase tracking-widest text-gray-400">Requests cannot be made for past days</p>
+                    </div>
+                  ) : (
+                    <>
+                      <button onClick={() => setView('swap')} className="w-full p-6 bg-white border-2 border-gray-100 hover:border-blue-200 hover:bg-blue-50 rounded-[2rem] font-black uppercase text-sm flex items-center gap-4 transition-all group">
+                        <ArrowLeftRight size={20} className="text-blue-400" />
+                        <div className="text-left">
+                          <p className="group-hover:text-blue-600 transition-colors">Request Swap</p>
+                          <p className="text-[9px] text-gray-400 font-medium normal-case">Ask someone to cover your shift</p>
+                        </div>
+                      </button>
+                      <button onClick={() => setView('timeoff')} className="w-full p-6 bg-white border-2 border-gray-100 hover:border-red-200 hover:bg-red-50 rounded-[2rem] font-black uppercase text-sm flex items-center gap-4 transition-all group">
+                        <UserMinus size={20} className="text-red-400" />
+                        <div className="text-left">
+                          <p className="group-hover:text-red-600 transition-colors">Request Time Off</p>
+                          <p className="text-[9px] text-gray-400 font-medium normal-case">Send to your scheduler for approval</p>
+                        </div>
+                      </button>
+                    </>
+                  )
                 )}
               </>
             ) : (
@@ -124,7 +140,11 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
                 <div className="p-5 bg-gray-50 border border-gray-100 rounded-[1.5rem]">
                   <p className="text-xs font-black uppercase tracking-widest text-gray-400">You are not scheduled this day</p>
                 </div>
-                {openShifts.length > 0 ? (
+                {isPast ? (
+                    <div className="p-5 bg-gray-50 border border-gray-100 rounded-[1.5rem]">
+                      <p className="text-xs font-black uppercase tracking-widest text-gray-400">Cannot sign up for past days</p>
+                    </div>
+                  ) : openShifts.length > 0 ? (
                   <div className="space-y-3">
                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Open Slots</p>
                     {openShifts.map(shift => (

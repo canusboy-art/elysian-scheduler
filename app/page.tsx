@@ -65,7 +65,7 @@ function CalendarContent() {
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'denied'),
       supabase.from('shift_requests').select('*').eq('target_user_id', profile.id).eq('type', 'swap').eq('status', 'approved'),
       isScheduler ? supabase.from('shift_requests').select('*').eq('type', 'petition_off').eq('status', 'pending') : Promise.resolve({ data: [] }),
-      !isScheduler ? supabase.from('shift_requests').select('*').eq('user_id', profile.id).eq('status', 'pending') : Promise.resolve({ data: [] }),
+      !isScheduler ? supabase.from('shift_requests').select('*').eq('user_id', profile.id).in('status', ['pending', 'approved', 'denied']) : Promise.resolve({ data: [] }),
     ]);
     setPendingSwaps(swapData || []);
     setDeniedSwaps(deniedData || []);
@@ -216,7 +216,10 @@ function CalendarContent() {
               const stCount = scheduledStaff.filter(s => s.is_st).length;
               const isMeWorking = profile && scheduledStaff.some(s => s.id === profile.id);
               const isCoveringSwap = isMeWorking && acceptedSwaps.some(s => s.date === dateStr);
-              const hasPendingRequest = myOutgoingRequests.some(r => r.date === dateStr);
+              const dayRequest = myOutgoingRequests.find(r => r.date === dateStr);
+              const hasPendingRequest = dayRequest?.status === 'pending';
+              const hasDeniedRequest = dayRequest?.status === 'denied';
+              const hasApprovedRequest = dayRequest?.status === 'approved';
               const isSelected = multiSelectedDates.includes(dateStr);
               const today = format(new Date(), 'yyyy-MM-dd');
               const isPast = dateStr < today;
@@ -240,6 +243,8 @@ function CalendarContent() {
                   {hasOverride && !multiSelectedDates.length && <div className={`absolute top-3 right-3 w-1.5 h-1.5 rounded-full ${isToday ? 'bg-white' : 'bg-blue-600'}`} />}
                   {isCoveringSwap && !isToday && <div className="absolute bottom-2 left-2 text-[8px]">🔄</div>}
                   {hasPendingRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-orange-400" />}
+                  {hasDeniedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" />}
+                  {hasApprovedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500" />}
                   {hasOpenSlot && !isToday && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                   <div className="flex flex-col gap-1 w-full max-w-[75px]">
                     <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
@@ -405,29 +410,36 @@ function CalendarContent() {
 
             {myOutgoingRequests.length > 0 && (
               <>
-                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2 pt-1">My Pending Requests</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-gray-400 px-1 mb-2 pt-1">My Requests</p>
                 {Object.values(
                   myOutgoingRequests.reduce((acc: any, r: any) => {
-                    const key = `${r.type}-${r.target_user_id || 'none'}`;
+                    const key = `${r.type}-${r.target_user_id || 'none'}-${r.status}`;
                     if (!acc[key]) acc[key] = [];
                     acc[key].push(r);
                     return acc;
                   }, {})
                 ).map((group: any) => {
                   const isSwap = group[0].type === 'swap';
+                  const status = group[0].status;
                   const target = isSwap ? roster.find(r => r.id === group[0].target_user_id) : null;
                   const sorted = [...group].sort((a: any, b: any) => a.date.localeCompare(b.date));
+                  const statusStyles: Record<string, { bg: string; border: string; text: string; badge: string }> = {
+                    pending:  { bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-600' },
+                    approved: { bg: 'bg-green-50',  border: 'border-green-100',  text: 'text-green-700',  badge: 'bg-green-100 text-green-700' },
+                    denied:   { bg: 'bg-red-50',    border: 'border-red-100',    text: 'text-red-700',    badge: 'bg-red-100 text-red-600' },
+                  };
+                  const s = statusStyles[status] || statusStyles.pending;
                   return (
-                    <div key={group[0].type + group[0].target_user_id} className={`p-4 rounded-2xl border space-y-2 ${isSwap ? 'bg-blue-50 border-blue-100' : 'bg-orange-50 border-orange-100'}`}>
+                    <div key={group[0].type + group[0].target_user_id + status} className={`p-4 rounded-2xl border space-y-2 ${s.bg} ${s.border}`}>
                       <div className="flex justify-between items-center">
-                        <p className={`text-[10px] font-black uppercase tracking-widest ${isSwap ? 'text-blue-700' : 'text-orange-700'}`}>
-                          {isSwap ? `Swap → ${target?.full_name || 'Unknown'}` : 'Time Off Request'}
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${s.text}`}>
+                          {isSwap ? `Swap → ${target?.full_name || 'Unknown'}` : 'Time Off'}
                         </p>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-gray-400">Pending</span>
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg ${s.badge}`}>{status}</span>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {sorted.map((r: any) => (
-                          <span key={r.id} className={`px-2 py-1 bg-white border rounded-lg text-[9px] font-black uppercase ${isSwap ? 'border-blue-200 text-blue-700' : 'border-orange-200 text-orange-700'}`}>
+                          <span key={r.id} className={`px-2 py-1 bg-white border rounded-lg text-[9px] font-black uppercase ${s.border} ${s.text}`}>
                             {format(parseISO(r.date), 'MMM d')}
                           </span>
                         ))}

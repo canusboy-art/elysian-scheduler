@@ -30,7 +30,7 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
     supabase.from('shifts').select('*').eq('date', dateStr).eq('status', 'vacant').eq('discipline', myDiscipline)
       .then(({ data }) => setOpenShifts(data || []));
     supabase.from('shift_requests').select('*')
-      .eq('user_id', myProfile.id).eq('date', dateStr).in('status', ['pending', 'approved'])
+      .eq('user_id', myProfile.id).eq('date', dateStr).in('status', ['pending', 'approved', 'denied'])
       .then(({ data }) => setExistingRequest(data?.[0] || null));
     // Check if worker signed up for an open slot on this day
     supabase.from('shift_assignments').select('*').eq('user_id', myProfile.id)
@@ -102,13 +102,21 @@ export default function WorkerDayPanel({ dateStr, isWorkingThisDay, myProfile, s
 
         {view === 'main' && (
           <div className="flex-1 p-10 space-y-4">
-            {existingRequest && (
-              <div className="p-5 bg-orange-50 border border-orange-100 rounded-[1.5rem]">
-                <p className="text-xs font-black uppercase tracking-widest text-orange-600">
-                  {existingRequest.type === 'petition_off' ? 'Time off request' : 'Swap request'} — {existingRequest.status}
-                </p>
-              </div>
-            )}
+            {existingRequest && (() => {
+              const statusStyles: Record<string, { bg: string; border: string; text: string }> = {
+                pending:  { bg: 'bg-orange-50', border: 'border-orange-100', text: 'text-orange-600' },
+                approved: { bg: 'bg-green-50',  border: 'border-green-100',  text: 'text-green-700' },
+                denied:   { bg: 'bg-red-50',    border: 'border-red-100',    text: 'text-red-600'   },
+              };
+              const s = statusStyles[existingRequest.status] || statusStyles.pending;
+              const label = existingRequest.type === 'petition_off' ? 'Time Off Request' : 'Swap Request';
+              const statusLabel = existingRequest.status === 'approved' ? '✓ Approved' : existingRequest.status === 'denied' ? '✕ Denied' : '⏳ Pending';
+              return (
+                <div className={`p-5 ${s.bg} border ${s.border} rounded-[1.5rem]`}>
+                  <p className={`text-xs font-black uppercase tracking-widest ${s.text}`}>{label} — {statusLabel}</p>
+                </div>
+              );
+            })()}
 
             {isWorkingThisDay ? (
               <>

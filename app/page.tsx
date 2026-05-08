@@ -268,10 +268,23 @@ function CalendarContent() {
                   {hasDeniedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-red-500" />}
                   {hasApprovedRequest && !isToday && <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-green-500" />}
                   {hasOpenSlot && !isToday && <div className="absolute bottom-2 right-2 w-1.5 h-1.5 rounded-full bg-emerald-400" />}
-                  <div className="flex flex-col gap-0.5 md:gap-1 w-full max-w-[75px]">
-                    <div className={`flex justify-between px-1 md:px-2 py-0.5 md:py-1 rounded md:rounded-md border font-black text-[7px] md:text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
-                    <div className={`flex justify-between px-1 md:px-2 py-0.5 md:py-1 rounded md:rounded-md border font-black text-[7px] md:text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : otCount < minOt ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-purple-700'}`}><span>OT</span><span>{otCount}</span></div>
-                    <div className={`flex justify-between px-1 md:px-2 py-0.5 md:py-1 rounded md:rounded-md border font-black text-[7px] md:text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : stCount < minSt ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-700'}`}><span>ST</span><span>{stCount}</span></div>
+                  {/* Desktop: PT/OT/ST badges */}
+                  <div className="hidden md:flex flex-col gap-1 w-full max-w-[75px]">
+                    <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : ptCount < minPt ? 'bg-red-50 text-red-500' : 'bg-blue-50 text-blue-700'}`}><span>PT</span><span>{ptCount}</span></div>
+                    <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : otCount < minOt ? 'bg-red-50 text-red-500' : 'bg-purple-50 text-purple-700'}`}><span>OT</span><span>{otCount}</span></div>
+                    <div className={`flex justify-between px-2 py-1 rounded-md border font-black text-[8px] ${isToday ? 'bg-white/20 border-white/10 text-white' : stCount < minSt ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-700'}`}><span>ST</span><span>{stCount}</span></div>
+                  </div>
+                  {/* Mobile: simple indicators */}
+                  <div className="md:hidden flex items-center justify-center mt-3">
+                    {isScheduler ? (
+                      <div className={`w-2.5 h-2.5 rounded-full ${(ptCount >= minPt && otCount >= minOt && stCount >= minSt) ? 'bg-emerald-400' : 'bg-red-400'}`} />
+                    ) : isMeWorking ? (
+                      <div className={`w-3 h-3 rounded-full ${isToday ? 'bg-white' : 'bg-emerald-500'}`} />
+                    ) : hasOpenSlot && !isPast ? (
+                      <div className="w-3 h-3 rounded-full border-2 border-blue-400 flex items-center justify-center">
+                        <span className="text-blue-500 font-black leading-none" style={{ fontSize: '8px' }}>+</span>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               );

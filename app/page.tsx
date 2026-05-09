@@ -358,9 +358,14 @@ function CalendarContent() {
           <h2 className="text-md font-black uppercase tracking-widest flex items-center gap-3">
             <Activity size={22} className="text-blue-400" /> {isScheduler ? 'Triage' : 'My Schedule'}
           </h2>
-          {isScheduler && triageCount > 0 && (
-            <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full">{triageCount}</span>
-          )}
+          <div className="flex items-center gap-3">
+            {isScheduler && triageCount > 0 && (
+              <span className="bg-red-500 text-white text-[10px] font-black px-2.5 py-1 rounded-full">{triageCount}</span>
+            )}
+            <button onClick={() => setShowMobilePanel(false)} className="lg:hidden p-2 hover:bg-white/10 rounded-xl transition-all">
+              <X size={20} />
+            </button>
+          </div>
         </header>
 
         {isScheduler ? (

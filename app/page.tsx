@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabaseClient';
 import {
@@ -102,16 +102,21 @@ function CalendarContent() {
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { fetchUserData(); }, [fetchUserData]);
 
+  const fetchDataRef = useRef(fetchData);
+  const fetchUserDataRef = useRef(fetchUserData);
+  useEffect(() => { fetchDataRef.current = fetchData; }, [fetchData]);
+  useEffect(() => { fetchUserDataRef.current = fetchUserData; }, [fetchUserData]);
+
   useEffect(() => {
     const channel = supabase
       .channel('realtime-scheduler')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'day_assignments' }, () => { fetchData(); fetchUserData(); })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_requests' }, () => fetchUserData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchData())
-      .subscribe();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts' }, () => fetchDataRef.current())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'day_assignments' }, () => { fetchDataRef.current(); fetchUserDataRef.current(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_requests' }, () => fetchUserDataRef.current())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchDataRef.current())
+      .subscribe((status) => console.log('[Realtime]', status));
     return () => { supabase.removeChannel(channel); };
-  }, [fetchData, fetchUserData]);
+  }, []);
 
   const handleUpdate = async () => { await Promise.all([fetchData(), fetchUserData()]); };
 

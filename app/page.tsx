@@ -330,7 +330,7 @@ function CalendarContent() {
       </section>
 
       {/* Mobile FAB — only shows when there's something to act on */}
-      {(triageCount > 0 || pendingSwaps.length > 0 || myOutgoingRequests.length > 0 || showMobilePanel) && (
+      {!showMobilePanel && (triageCount > 0 || pendingSwaps.length > 0 || myOutgoingRequests.length > 0) && (
         <button
           onClick={() => setShowMobilePanel(p => !p)}
           className="lg:hidden fixed bottom-5 right-5 z-[150] w-12 h-12 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"

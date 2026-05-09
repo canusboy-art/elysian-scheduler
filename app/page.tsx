@@ -189,10 +189,10 @@ function CalendarContent() {
   const triageCount = alerts.length + timeOffRequests.length;
 
   return (
-    <main className="flex h-screen h-dvh w-full bg-white overflow-hidden text-black font-sans isolate">
-      <section className="w-full lg:w-[72%] h-full flex flex-col border-r border-gray-100">
+    <main style={{ height: '100dvh' }} className="flex w-full bg-white overflow-hidden text-black font-sans isolate">
+      <section className="w-full lg:w-[72%] h-full min-h-0 flex flex-col border-r border-gray-100">
         {/* Mobile header — month nav only (portrait + landscape phones) */}
-        <header className="lg:hidden h-10 flex-none border-b flex items-center justify-between px-3 bg-white">
+        <header className="lg:hidden h-9 flex-none border-b flex items-center justify-between px-3 bg-white">
           <button onClick={signOut} className="p-1.5 text-gray-300 hover:text-red-500 transition-colors"><LogOut size={15} /></button>
           <div className="flex items-center bg-gray-50 rounded-xl p-0.5 border gap-0.5">
             <button onClick={() => navigateMonth('prev')} className="p-1.5 hover:bg-white rounded-lg transition-all"><ChevronLeft size={15} /></button>
@@ -230,8 +230,8 @@ function CalendarContent() {
           </div>
         </header>
 
-        <div className="flex-1 p-1 lg:p-4 bg-gray-50/20 overflow-hidden flex flex-col">
-          <div className="grid grid-cols-7 h-5 lg:h-8 mb-1 lg:mb-2 flex-none">
+        <div className="flex-1 min-h-0 px-1 pb-1 lg:p-4 bg-gray-50/20 overflow-hidden flex flex-col">
+          <div className="grid grid-cols-7 h-5 lg:h-8 lg:mb-2 flex-none">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
               <div key={day} className="text-center text-[9px] lg:text-[10px] font-black text-gray-400 uppercase tracking-tight lg:tracking-[0.3em]">{day[0]}<span className="hidden lg:inline">{day.slice(1)}</span></div>
             ))}

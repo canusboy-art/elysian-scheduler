@@ -102,6 +102,17 @@ function CalendarContent() {
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { fetchUserData(); }, [fetchUserData]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel('realtime-scheduler')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shifts' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'day_assignments' }, () => { fetchData(); fetchUserData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shift_requests' }, () => fetchUserData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchData, fetchUserData]);
+
   const handleUpdate = async () => { await Promise.all([fetchData(), fetchUserData()]); };
 
   const getStaffForDate = (dateStr: string) => {

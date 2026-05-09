@@ -335,7 +335,7 @@ function CalendarContent() {
           onClick={() => setShowMobilePanel(p => !p)}
           className="lg:hidden fixed bottom-5 right-5 z-[150] w-12 h-12 bg-gray-900 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform active:scale-95"
         >
-          {showMobilePanel ? <X size={20} /> : <Activity size={20} className="text-blue-400" />}
+          <Activity size={20} className="text-blue-400" />
           {(triageCount + pendingSwaps.length) > 0 && !showMobilePanel && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-[9px] font-black flex items-center justify-center">{triageCount + pendingSwaps.length}</span>
           )}
